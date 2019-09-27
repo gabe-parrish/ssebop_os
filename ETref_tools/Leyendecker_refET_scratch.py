@@ -40,6 +40,19 @@ print(ld_csv.loc[207].to_list())
 
 print(ld_csv.loc[207])
 
+def conv_date_to_jdate(datetime_obj):
+    """"""
+    pass
+
+def conv_lat_deg2rad(degrees_lat):
+    """
+
+    :param degrees_lat:
+    :return:
+    """
+
+    rad_lat = (math.pi / 180) * degrees_lat
+    return rad_lat
 
 def conv_F_to_C(tempF):
     """
@@ -67,7 +80,6 @@ def conv_f_to_m(foot_lenght):
     """
     m = foot_lenght / 3.28084
     return m
-
 
 def calc_Tmean(Tmax, Tmin, metric=True):
     """
@@ -152,9 +164,181 @@ def calc_psych_const(p_atm):
     psych_const = 0.000665 * p_atm
     return psych_const
 
+def calc_DT(delta, psych_const, u2_vel):
+    """
+    Calculate the Delta Term, the auxiliary calculation for the radiation component
+    :param delta: slope of pressure temp curve kPa/C
+    :param psych_const: psychrometric constant KPa/C
+    :param u2_vel: velocity at 2m height in m/s
+    :return: DT term (s/m ??)
+    """
+
+    DT = delta / (delta + (psych_const * (1 + (0.34 * u2_vel))))
+    return DT
+
+def calc_PT(delta, psych_const, u2_vel):
+    """
+    Calculate the Psi Term
+    :param delta: slope of pressure temp curve kPa/C
+    :param psych_const: psychrometric constant KPa/C
+    :param u2_vel: velocity at 2m height in m/s
+    :return: PT
+    """
+
+    PT = psych_const / (delta + (psych_const * (1 + (0.34 * u2_vel))))
+    return PT
+
+def calc_TT(Tmean, u2_vel):
+    """
+
+    :param Tmean: mean temp calculated from Tmax and Tmin
+    :param u2_vel: velocity at 2m height in m/s
+    :return: TT term (m/(degC * s)??)
+    """
+
+    TT = (900 / (Tmean + 273))* u2_vel
+    return TT
+
+def calc_sat_vp(Tmax, Tmin):
+    """
+    :param Tmax:
+    :param Tmin:
+    :return:
+    """
+
+    e_tmax = 0.6108 * math.exp((17.27 * Tmax)/(Tmax + 237.3))
+    e_tmin = 0.6108 * math.exp((17.27 * Tmin) / (Tmin + 237.3))
+    # get mean saturation vapor pressure from the sat vapor pressure at min and max
+    e_sat = (e_tmax + e_tmin) / 2
+
+    return (e_sat, e_tmax, e_tmin)
+
+def calc_e_actual(rh_max=None, rh_min=None, e_tmax=None, e_tmin=None, rhmax_only=False, rh_mean=None):
+    """
+
+    :param rh_max: maximum daily relative humidity as %
+    :param rh_min: minimum daily relative humidity as %
+    :param e_tmax:
+    :param e_tmin:
+    :param rhmax_only: bool True only if RHmin where error could be relatively large or if data is in doubt
+    :param rh_mean: None unless the rh max and min are not available
+    :return: e_actual in kPa
+    """
+    if rhmax_only:
+        e_actual = e_tmin * (rh_max / 100)
+    elif rh_mean is not None:
+        e_actual = ((e_tmin + e_tmax) / 2) * (rh_mean/100)
+    # this is the default unless data is suspect or missing
+    else:
+        e_actual = ((e_tmin*(rh_max/100)) + (e_tmax*(rh_min/100))) / 2
+    # moreover, if humidity data overall is very unreliable you can assume that e_actual = e_tmin
+    return e_actual
+
+def calc_dr(julian_date):
+    """
+    Calculate the inverse relative distance Earth-Sun.
+    :param julian_date:
+    :return:
+    """
+    dr = 1 + (0.033 * math.cos(((2 * math.pi) / 365) * julian_date))
+    return dr
+
+def calc_sol_decl(julian_date):
+    """
+
+    :param julian_date:
+    :return:
+    """
+    sol_decl = 0.409 * (math.sin(((2 * math.pi) / 365) - 1.39))
+    return sol_decl
+
+def calc_sunsethour_angle(lat_rad, sol_decl):
+    """
+
+    :param lat_rad: radians
+    :param sol_decl: radians (or dimensionless???)
+    :return: omega
+    """
+    omega_sun = math.acos(-math.tan(lat_rad) * math.tan(sol_decl))
+    return omega_sun
 
 
-# Make the functions first and apply them to the dataframe as they are applicable.
+def calc_Ra(dr, omega_sun, lat_rad, sol_decl):
+    """
+    Calculate Extraterrestrial Radiation (Ra) in MJ/(m^2 * day)
+    :param dr:
+    :param omega_sun:
+    :param lat_rad:
+    :param sol_decl:
+    :return: Ra extraterrestrial radiation
+    """
+
+    # define the solar constant in MJ/(m^2 * min)
+    Gsc = 0.0820
+
+    Ra = ((24* 60) / (math.pi)) * Gsc * dr * ((omega_sun * math.sin(lat_rad) * math.sin(sol_decl)) +
+                                              (math.cos(lat_rad) * math.cos(sol_decl) * math.sin(omega_sun)))
+    return Ra
+
+def calc_Rso(z, Ra):
+    """
+    Calculate Clear Sky radiation in in MJ/(m^2 * day)
+    :param z: elevation above sealevel in m
+    :param Ra: extraterrestrial radiation in MJ/(m^2 * day)
+    :return: Rso in in MJ/(m^2 * day)
+    """
+
+    Rso = (0.75 + 2e-5 * z) * Ra
+    return Rso
+
+# step 17 Net solar or net shortwave
+
+def calc_Rns(Rs, a=0.23):
+    """
+    calculate net shortwave.
+    :param Rs: net solar radiation in MJ/(m^2 * day)
+    :param a: albedo set to 0.23 dimensionless for grass ETo reference
+    :return:
+    """
+
+    Rns = (1 - a) * Rs
+    return Rns
+
+def calc_Rnl(Tmax, Tmin, e_actual, Rs, Rso):
+    """
+    Rate of outgoing long wave radiation is proportional to the temperature of the surace raised to the fourth.
+    :param Tmax: maximum temp deg C
+    :param Tmin: min temp deg C
+    :param e_actual: actual vapor pressure in kPa
+    :param Rs: incoming solar radiation
+    :param Rso: clear sky solar radiation
+    :return: Rnl in MJ/(m^2 * day)
+    """
+    # in MJ/(K^4 * m^2 * day)
+    boltzman_c = 4.903e-9
+    Rnl = boltzman_c * (((Tmax + 273.16)**4 + (Tmin * 273.16)**4) / 2) * \
+          (0.34 - (0.14 * math.sqrt(e_actual))) * ((1.35 * (Rs / Rso)) - 0.35)
+    return Rnl
+
+def calc_Rn(Rns, Rnl, mm=True):
+    """
+    Calculate net radiation
+    :param Rns:
+    :param Rnl:
+    :param mm: True if we want mm equivalent of net rad for PM equation
+    :return:
+    """
+
+    Rn = Rns - Rnl
+
+    if mm:
+        Rn *= 0.408
+
+    return Rn
+
+## Now we're at the FS1 Step
+
+# Make the functions first and apply them to the data frame as they are applicable.
 
 # Get 1 day's data as a sample to work with: July 26 2012 aka Day 208 index 207
 
