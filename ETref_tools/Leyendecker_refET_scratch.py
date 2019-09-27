@@ -338,6 +338,23 @@ def calc_Rn(Rns, Rnl, mm=True):
 
 ## Now we're at the FS1 Step
 
+def calculate_daily_penman(Rn, DT, PT, TT, e_sat, e_actual):
+    """
+    Calculate daily PM ref et in mm/day
+    :param Rn:
+    :param DT:
+    :param PT:
+    :param TT:
+    :param e_sat:
+    :param e_actual:
+    :return:
+    """
+    ETrad = DT * Rn
+    ETwind = PT * TT * (e_sat - e_actual)
+    ETo = ETwind + ETrad
+
+    return ETo
+
 # Make the functions first and apply them to the data frame as they are applicable.
 
 # Get 1 day's data as a sample to work with: July 26 2012 aka Day 208 index 207
