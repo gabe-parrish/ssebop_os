@@ -1,0 +1,30 @@
+# ===============================================================================
+# Copyright 2019 Gabriel Parrish
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+# http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ===============================================================================
+import os
+# ============= standard library imports ========================
+from utils.os_utils import windows_path_fix
+
+"""
+This script supports calculating daily reference ET from a pandas dataframe containing daily meteorological parameters.
+
+The functionality should include (eventually)
+
+1) support for renaming df columns to a standard format.
+2) support for gapfilling potential missing data
+3) accept user input for geography, elevation, wind speed height etc for the weather station.
+3) calling "refet_functions.py" - functions to calculate ETo and intermediate parameters.
+--- GELP 10/2/2019 ---
+"""
+

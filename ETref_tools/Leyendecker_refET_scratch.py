@@ -514,3 +514,5 @@ print('denominator', delta + C)
 
 ETo = (A + B) / (delta + C)
 print('O.G. ETo', ETo)
+
+
