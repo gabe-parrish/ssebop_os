@@ -70,6 +70,8 @@ def metdata_df_uniformat(df, max_air, min_air, avg_air, solar, ppt, maxrelhum, m
 def calc_daily_ETo_uniformat(dfr, meters_abv_sealevel, lonlat):
     """"""
 
+    # TODO - make options to deal with situations where a dataset may be missing e.g. max and min rel humidity...
+
     # # Step 1 Mean daily temp
     # # return mean temp in metric units
     # Step 1 pandas mode
@@ -173,33 +175,5 @@ def calc_daily_ETo_uniformat(dfr, meters_abv_sealevel, lonlat):
     dfr['ETwind'] = dfr['PT'] * dfr['TT'] * (dfr['e_sat'] - dfr['e_a'])
     # short crop refET
     dfr['ETo'] = dfr['ETwind'] + dfr['ETrad']
-
-    # TODO - separate out the plotting
-    # plot timeseries of ETo
-    print('plotting ETo')
-
-    # plotting Variables
-    ETo = dfr['ETo']
-    # day_of_year = jdfr['doy']
-    j_date = dfr.index
-
-    # # testing bc this is lower in the sumer but reasonable.
-    # dfr.to_csv(windows_path_fix(r'C:\Users\gparrish\Desktop\dfr.csv'))
-
-    fig, ax = plt.subplots()
-    ax.plot(j_date, ETo, color='green', label='Jornada ETo in mm')
-    ax.scatter(j_date, ETo, color='green', facecolor='none')
-
-    # ax.plot(w2dates, w2dbgs, color='blue', label='SampleWell-2 Radium Springs NM')
-    # ax.plot(w3dates, w3dbgs, color='orange', label='SampleWell-3 Las Cruces NM')
-    # ax.plot(w4dates, w4dbgs, color='red', label='SampleWell-4 Anthony Tx')
-
-    ax.set(xlabel='Date', ylabel='mm of ETo',
-           title='Jornada LTER Weather Station ETo and Metdata - 2012')
-    ax.grid()
-
-    plt.ylim((0, 16))
-    plt.legend()
-    plt.show()
 
     return dfr
