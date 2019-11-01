@@ -18,13 +18,17 @@ import pandas as pd
 from datetime import datetime, timedelta
 # ============= standard library imports ========================
 from utils.os_utils import windows_path_fix
-
+from ETref_tools.refet_functions import conv_F_to_C, conv_mph_to_mps, conv_in_to_mm
 """This script will include functions for preprocessing Meteorological data from a given source. The functions here 
 are bespoke to the weather station raw data format that is downloaded. The data will then be used to calculate ETo
  using dataframe_calc_daily_ETr.py and the functions in refet_functions.py"""
 
 def jornada_preprocess(jornada_metpath):
-    """"""
+    """
+    gets the data of the jornada weather station and resamples etc to make it useful to calculate ETo
+    :param jornada_metpath: path to a textfile of jornada meteorological data
+    :return:
+    """
 
     with open(jornada_metpath, 'r') as rfile:
 
@@ -126,3 +130,82 @@ def jornada_preprocess(jornada_metpath):
                                        'ScWndMg': np.mean, '5cmSoil': np.mean, '20cmSoil': np.mean, 'doy': np.median})
 
         return jdfr
+
+
+def leyendecker_preprocess(metpath):
+    """"""
+
+    ld_csv = pd.read_csv(metpath)
+
+    # === Now format the dataframe appropriately ===
+    # TODO - make the formatting it's own separate function in metdata_preprocessor
+    # 1) julian date
+    # first make 'Date' into datetime
+    ld_csv['datetime'] = ld_csv.apply(lambda x: datetime.strptime(x['Date'], '%Y-%m-%d'), axis=1)
+    # then make the datetime into a day of year
+    ld_csv['doy'] = ld_csv.apply(lambda x: x['datetime'].timetuple().tm_yday, axis=1)
+    # 2) Set the index to be a datetime
+    ld_csv = ld_csv.set_index('datetime')
+
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+        print('essential df \n', ld_csv.head(10))
+
+    # 3) get the units in metric and MJ (windspeed MilesPerHour -> MetersPerSecond & min, max and avg air temp F -> C, precip in->mm)
+    # airtemp first
+    temp_cols = ['Max Air Temperature (F)', 'Min Air Temperature (F)', 'Mean Air Temperature (F)']
+    new_temp_cols = ['maxair', 'minair', 'meanair']
+    for old, new in zip(temp_cols, new_temp_cols):
+        ld_csv[new] = ld_csv.apply(lambda x: conv_F_to_C(tempF=x[old]), axis=1)
+    # now windspeed
+    ld_csv['wind_mps'] = ld_csv.apply(lambda x: conv_mph_to_mps(mph=x['Mean Wind Speed (MPH)']), axis=1)
+    print(2)
+    # now precip
+    ld_csv['ppt'] = ld_csv.apply(lambda x: conv_in_to_mm(inches=x['Total Precipitation (in.)']), axis=1)
+
+    return ld_csv
+
+
+def airport_preprocess(weather_metpath):
+    pass
+
+def dri_preprocess(metpath):
+    """preprocessing DRI Agrimet textfiles"""
+
+    # todo ==== Generalize this bit of code to work for any metdata ====
+    with open(metpath, 'r') as rfile:
+
+        rows = [line for line in rfile]
+        data_rows = []
+        for r in rows:
+            space_free = r.strip(' ')
+            no_return = space_free.strip('\n')
+            line_lst = no_return.split(' ')
+            # print(repr(line_lst))
+            line_lst = [l for l in line_lst if l != '']
+            print(line_lst)
+
+            if len(line_lst) == 41:
+                data_rows.append(line_lst)
+
+        rawdata = data_rows[6:]
+        # data_col1 = 'String  Cal  DayOf  DayOfRun  Total     Ave.  Vector   Gust    Ave.    Max.    Min.    Ave.    Max.    Min.    Ave.    Max.    Min.    Ave.    Max.    Min.    Ave.    Max.    Min.    Ave.    Max.    Min.     Ave.    Max.    Min.    Ave.    Ave.    Max.    Min.   Total   Total  Days    Days    Days    Days     Ave.    Max.    Min.    Ave.    Max.    Min.    Ave.    Max.    Min.    Total  '
+        # data_col2 = data_rows[4]
+        #
+        # data_cols = ['{}{}'.format(i, j) for i, j in zip(data_col1, data_col2)]
+
+        data_cols = ['Date', 'Year', 'DOY', 'DOR', 'Solar', 'aveSpeed', 'wind_dir', 'speed_gust', 'mean_air_temp'] # TODO - continue on Monday!
+
+        met_df = pd.DataFrame(data=rawdata, columns=data_cols)
+    # ^^^^^^ Generalize this bit of code to work for any metdata ^^^^^
+
+    # data is already in daily metric formats so we just need to do unit conversions
+
+    # Radiation - kW-hr/m2 -> MJ/m2
+
+    # atm pressure - mbar to KPa
+
+
+
+def uscrn_preprocess(metpath):
+    """preprocessing USCRN weather data textfiles"""
+    pass

@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 from utils.os_utils import windows_path_fix
 from ETref_tools.dataframe_calc_daily_ETr import metdata_df_uniformat, calc_daily_ETo_uniformat
 from ETref_tools.refet_functions import conv_F_to_C, conv_mph_to_mps, conv_in_to_mm, conv_f_to_m
-from ETref_tools.metdata_preprocessor import jornada_preprocess
+from ETref_tools.metdata_preprocessor import jornada_preprocess, leyendecker_preprocess, airport_preprocess
 
 """This script uses other functions to get daily ETr from Leyendecker II met station in Las Cruces and the Jornada
  weather station at the Jornada LTER near las cruces and plots the two timeseries for comparison"""
@@ -30,7 +30,7 @@ pd.plotting.register_matplotlib_converters()
 
 # ================= Leyendecker II =================
 
-ld_csv = pd.read_csv(r'Z:\Users\Gabe\refET\jupyter_nbs\weather_station_data\leyendecker_2012_daily.csv')
+ld_csv = leyendecker_preprocess(r'Z:\Users\Gabe\refET\jupyter_nbs\weather_station_data\leyendecker_2012_daily.csv')
 
 # === other constants needed ===
 # 1) Height of windspeed instrument (we assume 2m for this instrument so we don't adjust)
@@ -39,37 +39,6 @@ feet_abv_sl = 3858.46
 m_abv_sl = conv_f_to_m(foot_lenght=feet_abv_sl)
 # 3) Lon Lat location (must be a geographic coordinate system?)
 lonlat = (-106.74, 32.20)
-
-# with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-#     print('essential df \n', ld_csv.head(10))
-
-# === Now format the dataframe appropriately ===
-# TODO - make the formatting it's own separate function in metdata_preprocessor
-#1) julian date
-# first make 'Date' into datetime
-ld_csv['datetime'] = ld_csv.apply(lambda x: datetime.strptime(x['Date'], '%Y-%m-%d'), axis=1)
-# then make the datetime into a day of year
-ld_csv['doy'] = ld_csv.apply(lambda x: x['datetime'].timetuple().tm_yday, axis=1)
-#
-#2) Set the index to be a datetime
-ld_csv = ld_csv.set_index('datetime')
-
-with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-    print('essential df \n', ld_csv.head(10))
-
-# 3) get the units in metric and MJ (windspeed MilesPerHour -> MetersPerSecond & min, max and avg air temp F -> C, precip in->mm)
-
-# airtemp first
-temp_cols = ['Max Air Temperature (F)', 'Min Air Temperature (F)', 'Mean Air Temperature (F)']
-new_temp_cols = ['maxair', 'minair', 'meanair']
-for old, new in zip(temp_cols, new_temp_cols):
-    ld_csv[new] = ld_csv.apply(lambda x: conv_F_to_C(tempF=x[old]), axis=1)
-# now windspeed
-print('do we get here 1')
-ld_csv['wind_mps'] = ld_csv.apply(lambda x: conv_mph_to_mps(mph=x['Mean Wind Speed (MPH)']), axis=1)
-print(2)
-# now precip
-ld_csv['ppt'] = ld_csv.apply(lambda x: conv_in_to_mm(inches=x['Total Precipitation (in.)']), axis=1)
 
 #4) Format the columns of the dataframe to a standard for ETo calculation
 ldf_csv = metdata_df_uniformat(df=ld_csv, max_air='maxair', min_air='minair', avg_air='meanair',
