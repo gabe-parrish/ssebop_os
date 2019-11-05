@@ -23,6 +23,21 @@ from ETref_tools.refet_functions import conv_F_to_C, conv_mph_to_mps, conv_in_to
 are bespoke to the weather station raw data format that is downloaded. The data will then be used to calculate ETo
  using dataframe_calc_daily_ETr.py and the functions in refet_functions.py"""
 
+def strip_space_separated(space_separated_file):
+    """For stripping lines of space separated files into a big list of lists"""
+    stripped_rows = []
+    with open(space_separated_file, 'r') as rfile:
+        rows = [line for line in rfile]
+        for r in rows:
+            space_free = r.strip(' ')
+            no_return = space_free.strip('\n')
+            line_lst = no_return.split(' ')
+            # print(repr(line_lst))
+            line_lst = [l for l in line_lst if l != '']
+            stripped_rows.append(line_lst)
+
+    return stripped_rows
+
 def jornada_preprocess(jornada_metpath):
     """
     gets the data of the jornada weather station and resamples etc to make it useful to calculate ETo
@@ -64,9 +79,9 @@ def jornada_preprocess(jornada_metpath):
 
             date_lst = date_str.split('/')
             # get the year month and day from [MM, DD, YYYY]
-            yr = date_lst[0]
-            mo = date_lst[1]
-            day = date_lst[2]
+            mo = date_lst[0]
+            day = date_lst[1]
+            yr = date_lst[2]
 
             # split up the minute and the hour from the HHMM string
             min_str = time_str[-2:]
@@ -76,7 +91,7 @@ def jornada_preprocess(jornada_metpath):
             hr_int = int(hr)
 
             # cool new 'literal' formatting of variables directly into a string - python 3.6 and better.
-            dt_str = f'{yr}-{mo}-{day}-{hr_int:02d}-{min_str}'
+            dt_str = f'{mo}-{day}-{yr}-{hr_int:02d}-{min_str}'
 
             try:
                 # turn the string into a datetime object
@@ -89,7 +104,7 @@ def jornada_preprocess(jornada_metpath):
                 hr_int = 23
                 min_str = '00'
                 # make the datetime obj
-                dt_str = f'{yr}-{mo}-{day}-{hr_int:02d}-{min_str}'
+                dt_str = f'{mo}-{day}-{yr}-{hr_int:02d}-{min_str}'
                 dt = datetime.strptime(dt_str, '%m-%d-%Y-%H-%M')
                 # manually set the datetime forward by one hour
                 dt += timedelta(hours=1)
@@ -172,40 +187,173 @@ def dri_preprocess(metpath):
     """preprocessing DRI Agrimet textfiles"""
 
     # todo ==== Generalize this bit of code to work for any metdata ====
+    data_rows = []
     with open(metpath, 'r') as rfile:
 
         rows = [line for line in rfile]
-        data_rows = []
+
         for r in rows:
             space_free = r.strip(' ')
             no_return = space_free.strip('\n')
             line_lst = no_return.split(' ')
             # print(repr(line_lst))
             line_lst = [l for l in line_lst if l != '']
-            print(line_lst)
+            # print(line_lst)
 
-            if len(line_lst) == 41:
-                data_rows.append(line_lst)
+            # if len(line_lst) == 41:
+            data_rows.append(line_lst)
 
-        rawdata = data_rows[6:]
-        # data_col1 = 'String  Cal  DayOf  DayOfRun  Total     Ave.  Vector   Gust    Ave.    Max.    Min.    Ave.    Max.    Min.    Ave.    Max.    Min.    Ave.    Max.    Min.    Ave.    Max.    Min.    Ave.    Max.    Min.     Ave.    Max.    Min.    Ave.    Ave.    Max.    Min.   Total   Total  Days    Days    Days    Days     Ave.    Max.    Min.    Ave.    Max.    Min.    Ave.    Max.    Min.    Total  '
-        # data_col2 = data_rows[4]
-        #
-        # data_cols = ['{}{}'.format(i, j) for i, j in zip(data_col1, data_col2)]
+    # ^^^^^^ Generalize this bit of code to work for any metdata text file eh?^^^^^
+    rawdata = data_rows[6:-2]
 
-        data_cols = ['Date', 'Year', 'DOY', 'DOR', 'Solar', 'aveSpeed', 'wind_dir', 'speed_gust', 'mean_air_temp'] # TODO - continue on Monday!
+    data_cols = ['Date', 'Year', 'DOY', 'DOR', 'Solar', 'aveSpeed', 'wind_dir', 'speed_gust', 'mean_air_temp',
+                 'max_air_temp', 'min_air_temp', 'mean_fuel_temp', 'max_fuel_temp', 'min_fuel_temp', 'mean_soilT',
+                 'max_soilT', 'min_soilT', 'mean_soilT_10cm', 'max_soilT_10cm',  'minn_soilT_10cm',
+                 'mean_soilT_20cm', 'max_soilT_20cm', 'min_soilT_20cm', 'mean_soilT50cm', 'max_soilT50cm',
+                 'min_soilT50cm', 'mean_rel_hum', 'max_rel_hum', 'min_rel_hum', 'mean_press_mb','mean_batvolts',
+                 'max_batvolts', 'minbatvolts', 'ET_total_ASCE', 'ET_Penman_total',
+                 'heating_deg_days', 'cooling_deg_days', 'growing_deg_days', 'growing_deg_days2',
+                 'ave_soil_moist_10cm', 'max_soil_moist_10cm', 'min_soil_moist_10cm', 'ave_soil_moist_20cm',
+                 'max_soil_moist_20cm', 'min_soil_moist_20cm','ave_soil_moist_50cm', 'max_soil_moist_50cm',
+                 'min_soil_moist_50cm', 'precip']
+    print(len(data_cols))
 
-        met_df = pd.DataFrame(data=rawdata, columns=data_cols)
-    # ^^^^^^ Generalize this bit of code to work for any metdata ^^^^^
+    met_df = pd.DataFrame(data=rawdata, columns=data_cols)
+    print(met_df.head())
 
     # data is already in daily metric formats so we just need to do unit conversions
 
-    # Radiation - kW-hr/m2 -> MJ/m2
+    # Radiation - kW-hr/m2 -> MJ/m2    1kw-hr = 3.6 MJ
+    met_df['Solar'] = met_df['Solar'].astype(float) * 3.6
+    # convert back to string
+    met_df['Solar'] = met_df['Solar'].astype(str)
 
-    # atm pressure - mbar to KPa
+    # atm pressure - mbar to KPa   1mbar = 0.1 kPa
+    met_df['mean_press_mb'] = met_df['mean_press_mb'].astype(float) * 0.1
+    # back to string
+    met_df['mean_press_mb'] = met_df['mean_press_mb'].astype(str)
+
+    # Get the dataframe to be dateindexed
+    met_df['dt'] = met_df.apply(lambda x: datetime.strptime(x['Date'], '%m/%d/%Y'), axis=1)
+    print(met_df['dt'])
+    met_df.set_index(met_df['dt'])
+
+    return met_df
 
 
-
-def uscrn_preprocess(metpath):
+def uscrn_preprocess(metpath, header_txt):
     """preprocessing USCRN weather data textfiles"""
-    pass
+
+    # get the header as a list first
+
+    header_file_rows = strip_space_separated(header_txt)
+
+    print(header_file_rows)
+
+    headers = [i[1] for i in header_file_rows[2:]]
+
+    print(headers)
+
+    metdata = strip_space_separated(metpath)
+
+    print(metdata)
+
+    met_dict = {}
+
+    for h in headers:
+        met_dict[h] = []
+
+    for line in metdata:
+
+        for i, j in zip(line, headers):
+
+            met_dict[j].append(i)
+
+
+    met_df = pd.DataFrame(met_dict, columns=headers)
+
+    print(met_df)
+
+    # No unit corrections necessary
+
+    return met_df
+
+def uscrn_subhourly(metpath, header_txt):
+    """
+    preprocessing 5 minut interval USCRN weather data textfiles to be time aggregated to
+    daily values for PM ETo calculations
+    :param metpath: string of path to meteorological data files separated by spaces
+    :param header_txt: string of path to header data separated by spaces
+    :return: dataframe of daily met variables
+    """
+
+    # get the header as a list first
+    header_file_rows = strip_space_separated(header_txt)
+    # get the header value out and put it into a list, skipping the headings in the file.
+    headers = [i[1] for i in header_file_rows[2:]]
+    # format the met data into a list of lists
+    metdata = strip_space_separated(metpath)
+    met_dict = {}
+    for h in headers:
+        met_dict[h] = []
+    for line in metdata:
+        for i, j in zip(line, headers):
+            met_dict[j].append(i)
+
+    met_df = pd.DataFrame(met_dict, columns=headers)
+
+    print(met_df['SOLAR_RADIATION'])
+
+    # A function for formatting the date and time columns into a datetime for the dataframe.
+    def uscrn_dt_format(date_str, time_str):
+        """
+        5 minute interval data
+        :param date_str: formatted like 20160101 YYYYMMDD
+        :param time_str: hhmm ZERO PADDED like 0945 or 1230 or 2400
+        :return: datetime object
+        """
+
+        # get the year month and day from [MM, DD, YYYY]
+        yr = date_str[0:4]
+        mo = date_str[4:6]
+        day = date_str[6:]
+
+        # split up the minute and the hour from the HHMM string
+        min_str = time_str[-2:]
+        hr = time_str[:-2]
+
+        # cool new 'literal' formatting of variables directly into a string - python 3.6 and better.
+        dt_str = f'{yr}-{mo}-{day}-{hr}-{min_str}'
+
+        try:
+            # turn the string into a datetime object
+            dt = datetime.strptime(dt_str, '%Y-%m-%d-%H-%M')
+        except ValueError:
+            raise
+
+        print('uscrn datetime', dt)
+        return dt
+
+    # apply the datetime function to two columns of the dataframe and create a new column. Choose local time, not UTC
+    met_df['datetime'] = met_df.apply(lambda x: uscrn_dt_format(x['LST_DATE'], x['LST_TIME']), axis=1)
+
+    # NEXT..... Unit conversions, then time aggregation
+
+
+
+
+
+if __name__ == "__main__":
+
+    # mpath = r'Z:\Users\Gabe\refET\met_datasets\central_NV\Sand_Spring_Valley_NV_Agrimet_DRI.txt'
+    # dri_preprocess(metpath=mpath)
+    #
+    # print('done')
+
+    mpath = r'Z:\Users\Gabe\refET\met_datasets\central_NV\Mercury_NV_USCRN_5min.txt'
+    header = r'Z:\Users\Gabe\refET\met_datasets\USCRN_5min_headers'
+
+    # uscrn_preprocess(metpath=mpath, header_txt=header)
+    uscrn_subhourly(metpath=mpath, header_txt=header)
+
+    # TODO - WE need a script way to pull the sub-hourly data offline. copy paste is not practical.

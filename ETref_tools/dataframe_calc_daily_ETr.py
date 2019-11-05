@@ -43,7 +43,7 @@ def metdata_df_uniformat(df, max_air, min_air, avg_air, solar, ppt, maxrelhum, m
     :param maxrelhum: (string) df column name of maximum daily relative humidity as a %
     :param minrelhum: (string) df column name of minimum daily relative humidity as a %
     :param avgrelhum: (string) df column name of average daily relative humidity as a %
-    :param sc_wind_mg: (string) df column name of scalar wind magnitude in m
+    :param sc_wind_mg: (string) df column name of scalar wind magnitude in m/s
     :param doy: (string) df column name of day of year 1 - 365/366
     :return: (string) df column name of a date-indexed dataframe with uniform column headings for calculation of Reference ET
     """
