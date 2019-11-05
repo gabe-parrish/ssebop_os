@@ -15,6 +15,7 @@
 import os
 import numpy as np
 import pandas as pd
+import math
 from datetime import datetime, timedelta
 # ============= standard library imports ========================
 from utils.os_utils import windows_path_fix
@@ -337,8 +338,55 @@ def uscrn_subhourly(metpath, header_txt):
     # apply the datetime function to two columns of the dataframe and create a new column. Choose local time, not UTC
     met_df['datetime'] = met_df.apply(lambda x: uscrn_dt_format(x['LST_DATE'], x['LST_TIME']), axis=1)
 
+    met_df['DOY'] = met_df.apply(lambda x: int(x['datetime'].strftime('%j').strip('0')), axis=1)
+
     # NEXT..... Unit conversions, then time aggregation
 
+    # convert W/m2 = (J/s)/m2 to MJ/m2
+    secs_in_5min = 5.0 * 60.0
+    # 5 minute cumulative solar radiation
+    met_df['SOLAR_MJ_FLUX'] = met_df['SOLAR_RADIATION'].astype(float) * secs_in_5min * 1.0e-6
+    # met_df['SOLAR_MJ_FLUX'] = met_df.apply(lambda x: float(x['SOLAR_RADIATION']) * secs_in_5min * 1.0e-6)
+
+    # adjust wind to be 2m above ground surface (USCRN set at 1.5m height)
+    z1 = 1.5
+    z2 = 2.0
+    #ASCE pg 193 Jensen n Allen
+    h = 0.12  # mean plant height in megters (for ETo after pg 2 "Step by Step Calculation of the Penman-Monteith
+    # Evapotranspiration (FAO-56 Method) by Zotarelli et al)
+    d = 0.67*h  # zero plane displacement height
+    zom = 0.12 * h  # roughness length affecting momentum transfer
+    # Eq 6 - 5 Jensen and Allen ASCE pg 111 used below (eq 11-60- on pg 394 is overly complicated) **math.log is ln
+    met_df['WIND_1_5'] = met_df['WIND_1_5'].astype(float)
+    met_df['WIND_2'] = met_df.apply(lambda x: x['WIND_1_5'] * ((math.log((z2 - d)/zom))/(math.log((z1 - d)/zom))), axis=1)
+
+    # # 1) Need to get a daily Maximum and minimum air temp as well as the avg air temp.
+    # temporarily set the columns equal to the values they will be calculated from
+    met_df['AIR_TEMPERATURE'] = met_df['AIR_TEMPERATURE'].astype(float)
+    met_df['MAX_AIR'] = met_df['AIR_TEMPERATURE']
+    met_df['MIN_AIR'] = met_df['AIR_TEMPERATURE']
+    # 2)  We need daily max and min relative humidity
+    met_df['RELATIVE_HUMIDITY'] = met_df['RELATIVE_HUMIDITY'].astype(float)
+    met_df['MAX_REL_HUM'] = met_df['RELATIVE_HUMIDITY']
+    met_df['MIN_REL_HUM'] = met_df['RELATIVE_HUMIDITY']
+    # 3) Solar radiation will be cumulative
+
+    # set the index of the dataframe to the datetime
+    met_df = met_df.set_index('datetime')
+
+    print(met_df.index)
+
+    met_df['PRECIPITATION'] = met_df['PRECIPITATION'].astype(float)
+    met_df['DOY'] = met_df['DOY'].astype(int)
+
+    met_df = met_df.resample('1D').agg({'MAX_AIR': np.max,'MIN_AIR': np.min, 'AIR_TEMPERATURE': np.mean,
+                                        'SOLAR_MJ_FLUX': np.sum, 'PRECIPITATION': np.sum, 'MAX_REL_HUM': np.max,
+                                        'MIN_REL_HUM': np.min, 'RELATIVE_HUMIDITY': np.mean, 'WIND_2': np.mean,
+                                        'DOY': np.min})
+
+    met_df.to_csv(r'C:\Users\gparrish\Desktop\uscrn_test.csv')
+
+    return met_df
 
 
 

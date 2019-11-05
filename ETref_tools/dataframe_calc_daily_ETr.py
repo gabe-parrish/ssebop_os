@@ -68,9 +68,11 @@ def metdata_df_uniformat(df, max_air, min_air, avg_air, solar, ppt, maxrelhum, m
     #                                     'ScWndMg': np.mean, '5cmSoil':np.mean, '20cmSoil': np.mean, 'doy': np.median}
 
 def calc_daily_ETo_uniformat(dfr, meters_abv_sealevel, lonlat):
-    """"""
+    """ETo after 'Step by Step Calculation of the Penman-Monteith Evapotranspiration
+     (FAO-56 Method)' by Zotarelli et al"""
 
-    # TODO - make options to deal with situations where a dataset may be missing e.g. max and min rel humidity...
+
+    #  # TODO - make options to deal with situations where a dataset may be missing e.g. max and min rel humidity...
 
     # # Step 1 Mean daily temp
     # # return mean temp in metric units
