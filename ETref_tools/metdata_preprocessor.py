@@ -311,7 +311,7 @@ def uscrn_subhourly(metpath, header_txt):
 
     met_df[(met_df == '-9999.0') | (met_df == '-99.000') | (met_df == '-9999')] = np.nan
 
-    print(met_df['SOLAR_RADIATION'])
+    # print(met_df['SOLAR_RADIATION'])
 
     # A function for formatting the date and time columns into a datetime for the dataframe.
     def uscrn_dt_format(date_str, time_str):
@@ -340,7 +340,7 @@ def uscrn_subhourly(metpath, header_txt):
         except ValueError:
             raise
 
-        print('uscrn datetime', dt)
+        # print('uscrn datetime', dt)
         return dt
 
 
@@ -400,6 +400,21 @@ def uscrn_subhourly(metpath, header_txt):
 
     return met_df
 
+
+def uscrn_batch_agg(dirpath, header_path):
+    """"Having downloaded a bunch of USCRN data as textfiles and put them all into a folder, this script will grab them,
+join them together and make one big text file. in future use uscrn_ftp.py once written"""
+    df_list = []
+    for i in os.listdir(dirpath):
+        fullpath = os.path.join(dirpath, i)
+        # df_list.append(fullpath)
+
+        df = uscrn_subhourly(fullpath, header_path)
+        # df_final = uscrn_subhourly(fullpath, header_path)
+        df_list.append(df)
+
+    uscrn_df = pd.concat(df_list)
+    return uscrn_df
 
 if __name__ == "__main__":
 

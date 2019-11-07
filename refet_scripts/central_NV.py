@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 from utils.os_utils import windows_path_fix
 from ETref_tools.dataframe_calc_daily_ETr import metdata_df_uniformat, calc_daily_ETo_uniformat
 from ETref_tools.refet_functions import conv_F_to_C, conv_mph_to_mps, conv_in_to_mm, conv_f_to_m
-from ETref_tools.metdata_preprocessor import jornada_preprocess, leyendecker_preprocess, airport_preprocess, uscrn_subhourly, dri_preprocess
+from ETref_tools.metdata_preprocessor import jornada_preprocess, leyendecker_preprocess, airport_preprocess, uscrn_subhourly, dri_preprocess, uscrn_batch_agg
 
 """This script uses other functions to get daily ETo for 2 agricultural sites from the DRI network in NV and compares
  them with a nearby USCRN network for """
@@ -30,11 +30,16 @@ pd.plotting.register_matplotlib_converters()
 
 # ================= Mercury NV =================
 
-mpath = r'Z:\Users\Gabe\refET\met_datasets\central_NV\Mercury_NV_USCRN_5min.txt'
-header = r'Z:\Users\Gabe\refET\met_datasets\USCRN_5min_headers'
+# mpath = r'Z:\Users\Gabe\refET\met_datasets\central_NV\Mercury_NV_USCRN_5min.txt'
+# header = r'Z:\Users\Gabe\refET\met_datasets\USCRN_5min_headers'
+#
+# # uscrn_preprocess(metpath=mpath, header_txt=header)
+# uscrn_df = uscrn_subhourly(metpath=mpath, header_txt=header)
 
-# uscrn_preprocess(metpath=mpath, header_txt=header)
-uscrn_df = uscrn_subhourly(metpath=mpath, header_txt=header)
+dirpath = r'Z:\Users\Gabe\refET\met_datasets\central_NV\mercury_raw'
+
+header_path = r'Z:\Users\Gabe\refET\met_datasets\USCRN_5min_headers'
+uscrn_df = uscrn_batch_agg(dirpath, header_path)
 
 # === other constants needed ===
 # 1) Height of windspeed instrument (its 1.5m but we do the adjustment in metdata_preprocessor.py)
@@ -111,17 +116,28 @@ l_ETo = sand_df['ETo']
 l_date = sand_df.index
 k_ETo = uscrn_ETo['ETo']
 k_date = uscrn_ETo.index
-# # === PRECIP ===
-# j_precip = rog_df.Ppt
-# l_precip = sand_df.Ppt
-# k_precip = uscrn_df.Ppt
+# === PRECIP ===
+ra = rog_df.resample('A').sum()
+sa = sand_df.resample('A').sum()
+us = uscrn_ETo.resample('A').sum()
+# j_precip = ra.Ppt
+# j_pdate = ra.index
+# l_precip = sa.Ppt
+# l_pdate = sa.index
+# k_precip = us.Ppt
+# k_pdate = us.index
+j_precip = rog_df.Ppt
+l_precip = sand_df.Ppt
+k_precip = uscrn_ETo.Ppt
+
+
 
 
 
 print(k_date)
 
 # plot
-fig, ax = plt.subplots(2, 1)
+fig, ax = plt.subplots(2, 1, sharex=True)
 ax[0].plot(j_date, j_ETo, color='red', label='rogers spring ETo (mm)')
 ax[0].scatter(j_date, j_ETo, color='red', facecolor='none')
 ax[0].plot(l_date, l_ETo, color='green', label='sand spring ETo (mm)')
@@ -133,10 +149,12 @@ ax[0].set(xlabel='Date', ylabel='mm of ETo',
        title='Central NV metstations comparison 2010')
 
 
-
-# ax[1].plot(j_date, j_precip, color='red', label='rogers spring ppt (mm)')
-# ax[1].plot(l_date, l_precip, color='green', label='sand spring ppt (mm)')
-# ax[1].plot(k_date, k_precip, color='brown', label='USCRN Mercury NV ppt (mm)')
+# ax[1].bar(j_pdate, j_precip, color='red', label='rogers spring ppt (mm)')
+# ax[1].bar(l_pdate, l_precip, color='green', label='sand spring ppt (mm)')
+# ax[1].bar(k_pdate, k_precip, color='brown', label='USCRN Mercury NV ppt (mm)')
+ax[1].plot(j_date, j_precip, color='red', label='rogers spring ppt (mm)')
+ax[1].plot(l_date, l_precip, color='green', label='sand spring ppt (mm)')
+ax[1].plot(k_date, k_precip, color='brown', label='USCRN Mercury NV ppt (mm)')
 
 
 ax[0].grid()

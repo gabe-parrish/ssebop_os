@@ -183,12 +183,17 @@ def calc_daily_ETo_uniformat(dfr, meters_abv_sealevel, lonlat, smoothing=False):
 
     if smoothing:
 
-        print("'smoothing' set to True: Applying a 5-day moving average to smooth the data")
+        print("'smoothing' set to True: Applying a 5-day moving average to smooth the data (precip exempt)")
         print("some columns will now become meaningless like DOY. If such behaviour is not desired recode smoothing"
               " using .agg('VAR': np.func)")
         # dfr = dfr.resample('5D').mean()
-
+        # save precip
+        dp = dfr['Ppt']
         dfr = dfr.rolling('10D').mean()
+        # add precip back in to avoid applying a rolling average
+        dfr['Ppt'] = dp
+
+        dfr = dfr
 
     print('checking for precip\n', dfr['Ppt'].head())
     return dfr
