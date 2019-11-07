@@ -67,7 +67,7 @@ jdfr = metdata_df_uniformat(jdfr, max_air='MaxAir', min_air='MinAir', avg_air='A
                                     ppt='Ppt', maxrelhum='MaxRelHum', minrelhum='MinRelHum', avgrelhum='RelHum',
                                     sc_wind_mg='ScWndMg', doy='doy')
 # calculate jornada ETo
-jdfr = calc_daily_ETo_uniformat(dfr=jdfr, meters_abv_sealevel=meters_abv_sl, lonlat=lonlat)
+jdfr = calc_daily_ETo_uniformat(dfr=jdfr, meters_abv_sealevel=meters_abv_sl, lonlat=lonlat, smoothing=True)
 
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
 #     print('essential df \n', jdfr.head(10))

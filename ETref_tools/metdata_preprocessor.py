@@ -144,7 +144,7 @@ def jornada_preprocess(jornada_metpath):
         jdfr = jdf.resample('1D').agg({'MaxAir': np.max, 'MinAir': np.min, 'AvgAir': np.mean, 'Solar': np.sum,
                                        'Ppt': np.sum, 'MaxRelHum': np.max, 'MinRelHum': np.min, 'RelHum': np.mean,
                                        'ScWndMg': np.mean, '5cmSoil': np.mean, '20cmSoil': np.mean, 'doy': np.median})
-
+        # print(jdfr.index)
         return jdfr
 
 
@@ -219,65 +219,71 @@ def dri_preprocess(metpath):
                  'min_soil_moist_50cm', 'precip']
     print(len(data_cols))
 
-    met_df = pd.DataFrame(data=rawdata, columns=data_cols)
+    met_df = pd.DataFrame(data=rawdata, columns=data_cols, dtype=float)
+    # take care on NaN vals
+    met_df[met_df == -9999.0] = np.nan
     print(met_df.head())
 
     # data is already in daily metric formats so we just need to do unit conversions
 
     # Radiation - kW-hr/m2 -> MJ/m2    1kw-hr = 3.6 MJ
     met_df['Solar'] = met_df['Solar'].astype(float) * 3.6
-    # convert back to string
-    met_df['Solar'] = met_df['Solar'].astype(str)
+    # # convert back to string
+    # met_df['Solar'] = met_df['Solar'].astype(str)
 
     # atm pressure - mbar to KPa   1mbar = 0.1 kPa
     met_df['mean_press_mb'] = met_df['mean_press_mb'].astype(float) * 0.1
-    # back to string
-    met_df['mean_press_mb'] = met_df['mean_press_mb'].astype(str)
+    # # back to string
+    # met_df['mean_press_mb'] = met_df['mean_press_mb'].astype(str)
 
     # Get the dataframe to be dateindexed
     met_df['dt'] = met_df.apply(lambda x: datetime.strptime(x['Date'], '%m/%d/%Y'), axis=1)
     print(met_df['dt'])
-    met_df.set_index(met_df['dt'])
+    met_df = met_df.set_index('dt')
+
+    print('dri index', met_df.index)
+
+    met_df.to_csv(r'C:\Users\gparrish\Desktop\dri_test.csv')
 
     return met_df
 
-
-def uscrn_preprocess(metpath, header_txt):
-    """preprocessing USCRN weather data textfiles"""
-
-    # get the header as a list first
-
-    header_file_rows = strip_space_separated(header_txt)
-
-    print(header_file_rows)
-
-    headers = [i[1] for i in header_file_rows[2:]]
-
-    print(headers)
-
-    metdata = strip_space_separated(metpath)
-
-    print(metdata)
-
-    met_dict = {}
-
-    for h in headers:
-        met_dict[h] = []
-
-    for line in metdata:
-
-        for i, j in zip(line, headers):
-
-            met_dict[j].append(i)
-
-
-    met_df = pd.DataFrame(met_dict, columns=headers)
-
-    print(met_df)
-
-    # No unit corrections necessary
-
-    return met_df
+#
+# def uscrn_preprocess(metpath, header_txt):
+#     """preprocessing USCRN weather data textfiles"""
+#
+#     # get the header as a list first
+#
+#     header_file_rows = strip_space_separated(header_txt)
+#
+#     print(header_file_rows)
+#
+#     headers = [i[1] for i in header_file_rows[2:]]
+#
+#     print(headers)
+#
+#     metdata = strip_space_separated(metpath)
+#
+#     print(metdata)
+#
+#     met_dict = {}
+#
+#     for h in headers:
+#         met_dict[h] = []
+#
+#     for line in metdata:
+#
+#         for i, j in zip(line, headers):
+#
+#             met_dict[j].append(i)
+#
+#
+#     met_df = pd.DataFrame(met_dict, columns=headers)
+#
+#     print(met_df)
+#
+#     # No unit corrections necessary
+#
+#     return met_df
 
 def uscrn_subhourly(metpath, header_txt):
     """
@@ -302,6 +308,8 @@ def uscrn_subhourly(metpath, header_txt):
             met_dict[j].append(i)
 
     met_df = pd.DataFrame(met_dict, columns=headers)
+
+    met_df[(met_df == '-9999.0') | (met_df == '-99.000') | (met_df == '-9999')] = np.nan
 
     print(met_df['SOLAR_RADIATION'])
 
@@ -334,6 +342,7 @@ def uscrn_subhourly(metpath, header_txt):
 
         print('uscrn datetime', dt)
         return dt
+
 
     # apply the datetime function to two columns of the dataframe and create a new column. Choose local time, not UTC
     met_df['datetime'] = met_df.apply(lambda x: uscrn_dt_format(x['LST_DATE'], x['LST_TIME']), axis=1)
@@ -384,7 +393,10 @@ def uscrn_subhourly(metpath, header_txt):
                                         'MIN_REL_HUM': np.min, 'RELATIVE_HUMIDITY': np.mean, 'WIND_2': np.mean,
                                         'DOY': np.min})
 
-    met_df.to_csv(r'C:\Users\gparrish\Desktop\uscrn_test.csv')
+    # get rid of extreme vals
+    met_df[(met_df['SOLAR_MJ_FLUX'] < -100.0) | (met_df['SOLAR_MJ_FLUX'] > 100.0)] = np.nan
+
+    met_df.to_csv(r'C:\Users\gparrish\Desktop\test.csv')
 
     return met_df
 

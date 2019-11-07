@@ -61,13 +61,14 @@ def metdata_df_uniformat(df, max_air, min_air, avg_air, solar, ppt, maxrelhum, m
     new_df['doy'] = df[doy]
 
     new_df.set_index(df.index)
+    print('index used \n {}'.format(df.index))
 
     return new_df
     # {'MaxAir': np.max, 'MinAir': np.min, 'AvgAir': np.mean, 'Solar': np.sum,
     #                                    'Ppt': np.sum, 'MaxRelHum':np.max, 'MinRelHum':np.min, 'RelHum': np.mean,
     #                                     'ScWndMg': np.mean, '5cmSoil':np.mean, '20cmSoil': np.mean, 'doy': np.median}
 
-def calc_daily_ETo_uniformat(dfr, meters_abv_sealevel, lonlat):
+def calc_daily_ETo_uniformat(dfr, meters_abv_sealevel, lonlat, smoothing=False):
     """ETo after 'Step by Step Calculation of the Penman-Monteith Evapotranspiration
      (FAO-56 Method)' by Zotarelli et al"""
 
@@ -177,5 +178,15 @@ def calc_daily_ETo_uniformat(dfr, meters_abv_sealevel, lonlat):
     dfr['ETwind'] = dfr['PT'] * dfr['TT'] * (dfr['e_sat'] - dfr['e_a'])
     # short crop refET
     dfr['ETo'] = dfr['ETwind'] + dfr['ETrad']
+
+    if smoothing:
+
+        print("'smoothing' set to True: Applying a 5-day moving average to smooth the data")
+        print("some columns will now become meaningless like DOY. If such behaviour is not desired recode smoothing"
+              " using .agg('VAR': np.func)")
+        # dfr = dfr.resample('5D').mean()
+
+        dfr = dfr.rolling('10D').mean()
+
 
     return dfr
