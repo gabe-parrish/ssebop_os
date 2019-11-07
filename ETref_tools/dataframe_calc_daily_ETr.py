@@ -75,6 +75,8 @@ def calc_daily_ETo_uniformat(dfr, meters_abv_sealevel, lonlat, smoothing=False):
 
     #  # TODO - make options to deal with situations where a dataset may be missing e.g. max and min rel humidity...
 
+    # make sure precip stays in there
+
     # # Step 1 Mean daily temp
     # # return mean temp in metric units
     # Step 1 pandas mode
@@ -188,5 +190,5 @@ def calc_daily_ETo_uniformat(dfr, meters_abv_sealevel, lonlat, smoothing=False):
 
         dfr = dfr.rolling('10D').mean()
 
-
+    print('checking for precip\n', dfr['Ppt'].head())
     return dfr

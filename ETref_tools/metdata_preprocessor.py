@@ -287,7 +287,7 @@ def dri_preprocess(metpath):
 
 def uscrn_subhourly(metpath, header_txt):
     """
-    preprocessing 5 minut interval USCRN weather data textfiles to be time aggregated to
+    preprocessing 5 minute interval USCRN weather data textfiles to be time aggregated to
     daily values for PM ETo calculations
     :param metpath: string of path to meteorological data files separated by spaces
     :param header_txt: string of path to header data separated by spaces
@@ -401,13 +401,11 @@ def uscrn_subhourly(metpath, header_txt):
     return met_df
 
 
-
-
 if __name__ == "__main__":
 
     # mpath = r'Z:\Users\Gabe\refET\met_datasets\central_NV\Sand_Spring_Valley_NV_Agrimet_DRI.txt'
     # dri_preprocess(metpath=mpath)
-    #
+
     # print('done')
 
     mpath = r'Z:\Users\Gabe\refET\met_datasets\central_NV\Mercury_NV_USCRN_5min.txt'

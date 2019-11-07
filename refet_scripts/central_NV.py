@@ -95,6 +95,7 @@ rog_df = metdata_df_uniformat(rog_df, max_air='max_air_temp', min_air='min_air_t
                                sc_wind_mg='aveSpeed', doy='DOY')
 # calculate Rogers Spring ETo
 rog_df = calc_daily_ETo_uniformat(dfr=rog_df, meters_abv_sealevel=meters_abv_sl, lonlat=lonlat, smoothing=True)
+print('testing ppt \n', rog_df.Ppt)
 
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
 #     print('essential df \n', jdfr.head(10))
@@ -108,27 +109,40 @@ j_ETo = rog_df['ETo']
 j_date = rog_df.index
 l_ETo = sand_df['ETo']
 l_date = sand_df.index
-print('test')
-print(l_date)
-
 k_ETo = uscrn_ETo['ETo']
 k_date = uscrn_ETo.index
+# # === PRECIP ===
+# j_precip = rog_df.Ppt
+# l_precip = sand_df.Ppt
+# k_precip = uscrn_df.Ppt
+
+
 
 print(k_date)
 
 # plot
-fig, ax = plt.subplots()
-ax.plot(j_date, j_ETo, color='red', label='rogers spring ETo (mm)')
-ax.scatter(j_date, j_ETo, color='red', facecolor='none')
-ax.plot(l_date, l_ETo, color='green', label='sand spring ETo (mm)')
-ax.scatter(l_date, l_ETo, color='green', facecolor='none')
-ax.plot(k_date, k_ETo, color='brown', label='USCRN ETo Mercury NV (mm)')
-ax.scatter(k_date, k_ETo, color='brown', facecolor='none')
+fig, ax = plt.subplots(2, 1)
+ax[0].plot(j_date, j_ETo, color='red', label='rogers spring ETo (mm)')
+ax[0].scatter(j_date, j_ETo, color='red', facecolor='none')
+ax[0].plot(l_date, l_ETo, color='green', label='sand spring ETo (mm)')
+ax[0].scatter(l_date, l_ETo, color='green', facecolor='none')
+ax[0].plot(k_date, k_ETo, color='brown', label='USCRN ETo Mercury NV (mm)')
+ax[0].scatter(k_date, k_ETo, color='brown', facecolor='none')
 
-ax.set(xlabel='Date', ylabel='mm of ETo',
+ax[0].set(xlabel='Date', ylabel='mm of ETo',
        title='Central NV metstations comparison 2010')
-ax.grid()
 
-plt.ylim((0, 16))
+
+
+# ax[1].plot(j_date, j_precip, color='red', label='rogers spring ppt (mm)')
+# ax[1].plot(l_date, l_precip, color='green', label='sand spring ppt (mm)')
+# ax[1].plot(k_date, k_precip, color='brown', label='USCRN Mercury NV ppt (mm)')
+
+
+ax[0].grid()
+ax[1].grid()
+
+# plt.ylim((0, 16))
+plt.tight_layout()
 plt.legend()
 plt.show()
