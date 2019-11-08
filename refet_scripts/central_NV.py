@@ -105,6 +105,32 @@ print('testing ppt \n', rog_df.Ppt)
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
 #     print('essential df \n', jdfr.head(10))
 
+# ================= pahranagat NWR (DRI) =================
+# --- Constants ----
+# 1) Height of windspeed instrument
+# ---> (no information so we assume 2m)
+# 2) Elevation above sealevel
+feet_abv_sl = 3225 # DRI website
+m_abv_sl = conv_f_to_m(foot_lenght=feet_abv_sl)
+# 3) Lon Lat location (must be a geographic coordinate system?)
+lonlat = (-115.106389, 37.245556)
+
+nwr = windows_path_fix(r'Z:\Users\Gabe\refET\met_datasets\central_NV\pahranagat_NWR_DRI.txt')
+
+nwr_df = dri_preprocess(nwr)
+
+# uniformat to format the DF (this df is in the correct format, but we do it anyway for propriety)
+nwr_df = metdata_df_uniformat(nwr_df, max_air='max_air_temp', min_air='min_air_temp', avg_air='mean_air_temp', solar='Solar',
+                               ppt='precip', maxrelhum='max_rel_hum', minrelhum='min_rel_hum', avgrelhum='mean_rel_hum',
+                               sc_wind_mg='aveSpeed', doy='DOY')
+# calculate Rogers Spring ETo
+nwr_df = calc_daily_ETo_uniformat(dfr=nwr_df, meters_abv_sealevel=meters_abv_sl, lonlat=lonlat, smoothing=True)
+print('testing ppt \n', rog_df.Ppt)
+
+# with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+#     print('essential df \n', jdfr.head(10))
+
+
 
 # ================= plot timeseries of ETo =================
 print('plotting ETo')
@@ -116,10 +142,12 @@ l_ETo = sand_df['ETo']
 l_date = sand_df.index
 k_ETo = uscrn_ETo['ETo']
 k_date = uscrn_ETo.index
+nwr_ETo = nwr_df['ETo']
+nwr_date = nwr_df.index
 # === PRECIP ===
-ra = rog_df.resample('A').sum()
-sa = sand_df.resample('A').sum()
-us = uscrn_ETo.resample('A').sum()
+# ra = rog_df.resample('A').sum()
+# sa = sand_df.resample('A').sum()
+# us = uscrn_ETo.resample('A').sum()
 # j_precip = ra.Ppt
 # j_pdate = ra.index
 # l_precip = sa.Ppt
@@ -129,25 +157,32 @@ us = uscrn_ETo.resample('A').sum()
 j_precip = rog_df.Ppt
 l_precip = sand_df.Ppt
 k_precip = uscrn_ETo.Ppt
+nwr_precip = nwr_df.Ppt
 
+# === TEMP ===
+j_temp = rog_df.AvgAir
+l_temp = sand_df.AvgAir
+k_temp = uscrn_ETo.AvgAir
+nwr_temp = nwr_df.AvgAir
 
-
-
+# === Wind ===
+# todo plot wind
 
 print(k_date)
 
 # plot
-fig, ax = plt.subplots(2, 1, sharex=True)
+fig, ax = plt.subplots(3, 1, sharex=True)
 ax[0].plot(j_date, j_ETo, color='red', label='rogers spring ETo (mm)')
 ax[0].scatter(j_date, j_ETo, color='red', facecolor='none')
 ax[0].plot(l_date, l_ETo, color='green', label='sand spring ETo (mm)')
 ax[0].scatter(l_date, l_ETo, color='green', facecolor='none')
 ax[0].plot(k_date, k_ETo, color='brown', label='USCRN ETo Mercury NV (mm)')
 ax[0].scatter(k_date, k_ETo, color='brown', facecolor='none')
+ax[0].plot(nwr_date, nwr_ETo, color='blue', label='Pahranagat NWR ETo (mm)')
+ax[0].scatter(nwr_date, nwr_ETo, color='blue', facecolor='none')
 
 ax[0].set(xlabel='Date', ylabel='mm of ETo',
        title='Central NV metstations comparison 2010')
-
 
 # ax[1].bar(j_pdate, j_precip, color='red', label='rogers spring ppt (mm)')
 # ax[1].bar(l_pdate, l_precip, color='green', label='sand spring ppt (mm)')
@@ -155,10 +190,17 @@ ax[0].set(xlabel='Date', ylabel='mm of ETo',
 ax[1].plot(j_date, j_precip, color='red', label='rogers spring ppt (mm)')
 ax[1].plot(l_date, l_precip, color='green', label='sand spring ppt (mm)')
 ax[1].plot(k_date, k_precip, color='brown', label='USCRN Mercury NV ppt (mm)')
+ax[1].plot(nwr_date, nwr_precip, color='blue', label='Pahranagat NWR ppt (mm)')
+
+ax[2].plot(j_date, j_temp, color='red', label='rogers spring temp C')
+ax[2].plot(l_date, l_temp, color='green', label='sand spring temp C')
+ax[2].plot(k_date, k_temp, color='brown', label='USCRN Mercury NV temp C')
+ax[2].plot(nwr_date, nwr_temp, color='blue', label='Pahranagat NWR temp C')
 
 
 ax[0].grid()
 ax[1].grid()
+ax[2].grid()
 
 # plt.ylim((0, 16))
 plt.tight_layout()
