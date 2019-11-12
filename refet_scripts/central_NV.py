@@ -101,6 +101,7 @@ rog_df = metdata_df_uniformat(rog_df, max_air='max_air_temp', min_air='min_air_t
 # calculate Rogers Spring ETo
 rog_df = calc_daily_ETo_uniformat(dfr=rog_df, meters_abv_sealevel=meters_abv_sl, lonlat=lonlat, smoothing=True)
 print('testing ppt \n', rog_df.Ppt)
+print('testing wind \n', rog_df.ScWndMg)
 
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
 #     print('essential df \n', jdfr.head(10))
@@ -129,7 +130,6 @@ print('testing ppt \n', rog_df.Ppt)
 
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
 #     print('essential df \n', jdfr.head(10))
-
 
 
 # ================= plot timeseries of ETo =================
@@ -167,11 +167,15 @@ nwr_temp = nwr_df.AvgAir
 
 # === Wind ===
 # todo plot wind
+j_wind = rog_df.ScWndMg
+l_wind = sand_df.ScWndMg
+k_wind = uscrn_ETo.ScWndMg
+nwr_wind = nwr_df.ScWndMg
 
 print(k_date)
 
 # plot
-fig, ax = plt.subplots(3, 1, sharex=True)
+fig, ax = plt.subplots(4, 1, sharex=True)
 ax[0].plot(j_date, j_ETo, color='red', label='rogers spring ETo (mm)')
 ax[0].scatter(j_date, j_ETo, color='red', facecolor='none')
 ax[0].plot(l_date, l_ETo, color='green', label='sand spring ETo (mm)')
@@ -197,10 +201,18 @@ ax[2].plot(l_date, l_temp, color='green', label='sand spring temp C')
 ax[2].plot(k_date, k_temp, color='brown', label='USCRN Mercury NV temp C')
 ax[2].plot(nwr_date, nwr_temp, color='blue', label='Pahranagat NWR temp C')
 
+ax[3].plot(j_date, j_wind, color='red', label='rogers wind')
+ax[3].plot(l_date, l_wind, color='green', label='sand spring wind')
+ax[3].plot(k_date, k_wind, color='brown', label='USCRN Mercury wind')
+ax[3].plot(nwr_date, nwr_wind, color='blue', label='Pahranagat wind')
+
+ax[3].set(xlabel='Date', ylabel='m/s')
+
 
 ax[0].grid()
 ax[1].grid()
 ax[2].grid()
+ax[3].grid()
 
 # plt.ylim((0, 16))
 plt.tight_layout()
