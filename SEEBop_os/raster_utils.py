@@ -80,7 +80,7 @@ def x_y_extract(point_path, field='id'):
     return feature_dict
 
 
-def raster_extract(raster_path, x, y):
+def raster_extract(raster_path, x, y, arc=True):
     """
     uses x and y from x_y_extract function to grab the value at the cordinates from the raster given in raster_path
     :param raster_path:
@@ -102,29 +102,38 @@ def raster_extract(raster_path, x, y):
     rows = datasource_obj.RasterYSize
     cols = datasource_obj.RasterXSize
 
+    print('rows and cols \n', rows, cols)
+
     # get georefference info to eventually calculate the offset:
     transform = datasource_obj.GetGeoTransform()
     xOrigin = transform[0]
     yOrigin = transform[3]
+    print('xy origin', xOrigin, yOrigin)
     width_of_pixel = transform[1]
     height_of_pixel = transform[5]
+
+    print('widht and height \n', width_of_pixel, height_of_pixel)
 
     # read in a band (only one band)
     band = datasource_obj.GetRasterBand(1)
     # ReadAsArray(xoffset, yoffset, xcount, ycount)
     data = band.ReadAsArray(0, 0, cols, rows)
 
-
+    print('shape:', data.shape)
 
     # get the offsets so you can read the data from the correct position in the array.
+    print(x, xOrigin, width_of_pixel)
+    print(y, yOrigin, height_of_pixel)
     x_offset = int((x - xOrigin) / width_of_pixel)
-    y_offset = int((y-yOrigin) / height_of_pixel)
+    y_offset = int((y - yOrigin) / height_of_pixel)
+
+    print('offset\n',x_offset, y_offset)
 
     # is this a [rows, columns] thing?
     try:
         value = data[y_offset, x_offset]
     except IndexError:
-        print ('INDEX ERROR, ASSUMING that we are using mini-models and that the array is 3X3 and taking center value')
+        print('INDEX ERROR, ASSUMING that we are using mini-models and that the array is 3X3 and taking center value')
         value = data[1, 1]
     # print "VALUE {}".format(value)
 
