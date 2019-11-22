@@ -190,8 +190,9 @@ def calc_daily_ETo_uniformat(dfr, meters_abv_sealevel, lonlat, smoothing=False):
         # save precip
         dp = dfr['Ppt']
         dfr = dfr.rolling('10D').mean()
+        # dfr = dfr.resample('1M').sum()
         # add precip back in to avoid applying a rolling average
-        dfr['Ppt'] = dp
+        # dfr['Ppt'] = dp
 
         dfr = dfr
 

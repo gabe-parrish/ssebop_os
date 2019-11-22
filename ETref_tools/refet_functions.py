@@ -297,6 +297,8 @@ def calc_Rns(Rs, a=0.23):
     return Rns
 
 def calc_Rnl(Tmax, Tmin, e_actual, Rs, Rso, Ra=None):
+
+
     """
     Rate of outgoing long wave radiation is proportional to the temperature of the surace raised to the fourth.
     :param Tmax: maximum temp deg C

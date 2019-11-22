@@ -22,7 +22,7 @@ from utils.os_utils import windows_path_fix
 from ETref_tools.dataframe_calc_daily_ETr import metdata_df_uniformat, calc_daily_ETo_uniformat
 from ETref_tools.refet_functions import conv_F_to_C, conv_mph_to_mps, conv_in_to_mm, conv_f_to_m
 from ETref_tools.metdata_preprocessor import jornada_preprocess, leyendecker_preprocess, airport_preprocess, uscrn_subhourly, dri_preprocess, uscrn_batch_agg
-
+from refet_scripts.extract_gridmet import gridmet_eto_reader
 """This script uses other functions to get daily ETo for 2 agricultural sites from the DRI network in NV and compares
  them with a nearby USCRN network for """
 
@@ -131,6 +131,14 @@ print('testing ppt \n', rog_df.Ppt)
 # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
 #     print('essential df \n', jdfr.head(10))
 
+#### ====== GRIDMET TIMESERIES =======
+
+gridmet_eto_file = r'Z:\Users\Gabe\refET\met_datasets\gridmet_blankenau\DRI - Sand Spring Valley.csv'
+sand_spring_gm = gridmet_eto_reader(gridmet_eto_loc=gridmet_eto_file, smooting=True)
+
+# TODO -extract Mercury site
+# mercury_gm = gridmet_eto_reader()
+
 
 # ================= plot timeseries of ETo =================
 print('plotting ETo')
@@ -144,6 +152,8 @@ k_ETo = uscrn_ETo['ETo']
 k_date = uscrn_ETo.index
 nwr_ETo = nwr_df['ETo']
 nwr_date = nwr_df.index
+sand_spring_date = sand_spring_gm.index
+sand_sprint_gm_ETo = sand_spring_gm['ETo']
 # === PRECIP ===
 # ra = rog_df.resample('A').sum()
 # sa = sand_df.resample('A').sum()
@@ -174,40 +184,97 @@ nwr_wind = nwr_df.ScWndMg
 
 print(k_date)
 
-# # plot ====== ALL METSTATIONS ======
+# plot ====== ALL METSTATIONS ======
+fig, ax = plt.subplots(4, 1, sharex=True)
+ax[0].plot(j_date, j_ETo, color='red', label='rogers spring ETo (mm)')
+ax[0].scatter(j_date, j_ETo, color='red', facecolor='none')
+ax[0].plot(l_date, l_ETo, color='green', label='sand spring ETo (mm)')
+ax[0].scatter(l_date, l_ETo, color='green', facecolor='none')
+ax[0].plot(k_date, k_ETo, color='brown', label='USCRN ETo Mercury NV (mm)')
+ax[0].scatter(k_date, k_ETo, color='brown', facecolor='none')
+ax[0].plot(nwr_date, nwr_ETo, color='blue', label='Pahranagat NWR ETo (mm)')
+ax[0].scatter(nwr_date, nwr_ETo, color='blue', facecolor='none')
+
+ax[0].set(xlabel='Date', ylabel='mm of ETo',
+       title='Central NV metstations comparison 2010')
+
+# ax[1].bar(j_pdate, j_precip, color='red', label='rogers spring ppt (mm)')
+# ax[1].bar(l_pdate, l_precip, color='green', label='sand spring ppt (mm)')
+# ax[1].bar(k_pdate, k_precip, color='brown', label='USCRN Mercury NV ppt (mm)')
+ax[1].plot(j_date, j_precip, color='red', label='rogers spring ppt (mm)')
+ax[1].plot(l_date, l_precip, color='green', label='sand spring ppt (mm)')
+ax[1].plot(k_date, k_precip, color='brown', label='USCRN Mercury NV ppt (mm)')
+ax[1].plot(nwr_date, nwr_precip, color='blue', label='Pahranagat NWR ppt (mm)')
+
+ax[2].plot(j_date, j_temp, color='red', label='rogers spring temp C')
+ax[2].plot(l_date, l_temp, color='green', label='sand spring temp C')
+ax[2].plot(k_date, k_temp, color='brown', label='USCRN Mercury NV temp C')
+ax[2].plot(nwr_date, nwr_temp, color='blue', label='Pahranagat NWR temp C')
+
+ax[3].plot(j_date, j_wind, color='red', label='rogers wind')
+ax[3].plot(l_date, l_wind, color='green', label='sand spring wind')
+ax[3].plot(k_date, k_wind, color='brown', label='USCRN Mercury wind')
+ax[3].plot(nwr_date, nwr_wind, color='blue', label='Pahranagat wind')
+
+ax[3].set(xlabel='Date', ylabel='m/s')
+
+
+ax[0].grid()
+ax[1].grid()
+ax[2].grid()
+ax[3].grid()
+
+# plt.ylim((0, 16))
+plt.tight_layout()
+plt.legend()
+plt.show()
+
+
+
+
+### ===== Sand Spring NV vs Gridmet ======
+fig, ax = plt.subplots(4, 1, sharex=True)
+
+ax[0].plot(l_date, l_ETo, color='green', label='sand spring ETo (mm)')
+ax[0].scatter(l_date, l_ETo, color='green', facecolor='none')
+ax[0].plot(sand_spring_date, sand_sprint_gm_ETo, color='black', label='sand spring gridmet ETo (mm)')
+ax[0].scatter(sand_spring_date, sand_sprint_gm_ETo, color='black', facecolor='none')
+ax[0].set(xlabel='Date', ylabel='mm of ETo',
+       title='Sand Spring Nevada Reference Vs Gridmet')
+
+ax[1].plot(l_date, l_precip, color='green', label='sand spring ppt (mm)')
+ax[1].set(xlabel='Date', ylabel='mm precip')
+
+ax[2].plot(l_date, l_temp, color='green', label='sand spring temp C')
+ax[2].set(xlabel='Date', ylabel='degrees C')
+
+ax[3].plot(l_date, l_wind, color='green', label='sand spring wind')
+ax[3].set(xlabel='Date', ylabel='m/s')
+
+ax[0].grid()
+ax[1].grid()
+ax[2].grid()
+ax[3].grid()
+
+# plt.ylim((0, 16))
+plt.tight_layout()
+plt.legend()
+plt.show()
+
+# ### ===== Marcury NV vs Gridmet ======
+#
 # fig, ax = plt.subplots(4, 1, sharex=True)
-# ax[0].plot(j_date, j_ETo, color='red', label='rogers spring ETo (mm)')
-# ax[0].scatter(j_date, j_ETo, color='red', facecolor='none')
-# ax[0].plot(l_date, l_ETo, color='green', label='sand spring ETo (mm)')
-# ax[0].scatter(l_date, l_ETo, color='green', facecolor='none')
+#
 # ax[0].plot(k_date, k_ETo, color='brown', label='USCRN ETo Mercury NV (mm)')
 # ax[0].scatter(k_date, k_ETo, color='brown', facecolor='none')
-# ax[0].plot(nwr_date, nwr_ETo, color='blue', label='Pahranagat NWR ETo (mm)')
-# ax[0].scatter(nwr_date, nwr_ETo, color='blue', facecolor='none')
-#
 # ax[0].set(xlabel='Date', ylabel='mm of ETo',
 #        title='Central NV metstations comparison 2010')
-#
-# # ax[1].bar(j_pdate, j_precip, color='red', label='rogers spring ppt (mm)')
-# # ax[1].bar(l_pdate, l_precip, color='green', label='sand spring ppt (mm)')
-# # ax[1].bar(k_pdate, k_precip, color='brown', label='USCRN Mercury NV ppt (mm)')
-# ax[1].plot(j_date, j_precip, color='red', label='rogers spring ppt (mm)')
-# ax[1].plot(l_date, l_precip, color='green', label='sand spring ppt (mm)')
 # ax[1].plot(k_date, k_precip, color='brown', label='USCRN Mercury NV ppt (mm)')
-# ax[1].plot(nwr_date, nwr_precip, color='blue', label='Pahranagat NWR ppt (mm)')
-#
-# ax[2].plot(j_date, j_temp, color='red', label='rogers spring temp C')
-# ax[2].plot(l_date, l_temp, color='green', label='sand spring temp C')
+# ax[1].set(xlabel='Date', ylabel='mm precip')
 # ax[2].plot(k_date, k_temp, color='brown', label='USCRN Mercury NV temp C')
-# ax[2].plot(nwr_date, nwr_temp, color='blue', label='Pahranagat NWR temp C')
-#
-# ax[3].plot(j_date, j_wind, color='red', label='rogers wind')
-# ax[3].plot(l_date, l_wind, color='green', label='sand spring wind')
+# ax[2].set(xlabel='Date', ylabel='degrees C')
 # ax[3].plot(k_date, k_wind, color='brown', label='USCRN Mercury wind')
-# ax[3].plot(nwr_date, nwr_wind, color='blue', label='Pahranagat wind')
-#
 # ax[3].set(xlabel='Date', ylabel='m/s')
-#
 #
 # ax[0].grid()
 # ax[1].grid()
@@ -218,58 +285,3 @@ print(k_date)
 # plt.tight_layout()
 # plt.legend()
 # plt.show()
-#
-#
-
-### ===== Sand Spring NV vs Gridmet ======
-fig, ax = plt.subplots(4, 1, sharex=True)
-
-ax[0].plot(l_date, l_ETo, color='green', label='sand spring ETo (mm)')
-ax[0].scatter(l_date, l_ETo, color='green', facecolor='none')
-
-ax[0].set(xlabel='Date', ylabel='mm of ETo',
-       title='Sand Spring Nevada Reference Vs Gridmet')
-
-ax[1].plot(l_date, l_precip, color='green', label='sand spring ppt (mm)')
-ax[1].set(xlabel='Date', ylabel='mm precip')
-ax[2].plot(l_date, l_temp, color='green', label='sand spring temp C')
-ax[2].set(xlabel='Date', ylabel='degrees C')
-
-ax[3].plot(l_date, l_wind, color='green', label='sand spring wind')
-
-ax[3].set(xlabel='Date', ylabel='m/s')
-
-ax[0].grid()
-ax[1].grid()
-ax[2].grid()
-ax[3].grid()
-
-# plt.ylim((0, 16))
-plt.tight_layout()
-plt.legend()
-plt.show()
-
-### ===== Sand Spring NV vs Gridmet ======
-
-fig, ax = plt.subplots(4, 1, sharex=True)
-
-ax[0].plot(k_date, k_ETo, color='brown', label='USCRN ETo Mercury NV (mm)')
-ax[0].scatter(k_date, k_ETo, color='brown', facecolor='none')
-ax[0].set(xlabel='Date', ylabel='mm of ETo',
-       title='Central NV metstations comparison 2010')
-ax[1].plot(k_date, k_precip, color='brown', label='USCRN Mercury NV ppt (mm)')
-ax[1].set(xlabel='Date', ylabel='mm precip')
-ax[2].plot(k_date, k_temp, color='brown', label='USCRN Mercury NV temp C')
-ax[2].set(xlabel='Date', ylabel='degrees C')
-ax[3].plot(k_date, k_wind, color='brown', label='USCRN Mercury wind')
-ax[3].set(xlabel='Date', ylabel='m/s')
-
-ax[0].grid()
-ax[1].grid()
-ax[2].grid()
-ax[3].grid()
-
-# plt.ylim((0, 16))
-plt.tight_layout()
-plt.legend()
-plt.show()
