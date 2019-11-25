@@ -278,8 +278,8 @@ def gridmet_eto_reader(gridmet_eto_loc, smoothing=False):
             vars = line.split(',')
             gridmet_dict['ETo'].append(float(vars[0]))
             gridmet_dict['date'].append(vars[1])
-            gridmet_dict['Lat'].append(float(vars[2]))
-            gridmet_dict['Lon'].append(float(vars[3]))
+            gridmet_dict['Lon'].append(float(vars[2]))
+            gridmet_dict['Lat'].append(float(vars[3]))
             gridmet_dict['elevation_m'].append(float(vars[4]))
 
 

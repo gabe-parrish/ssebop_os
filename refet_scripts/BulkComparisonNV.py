@@ -40,6 +40,8 @@ for f in os.listdir(DRI_agrimet_root):
     fn = f.split('.')[0]
     filenames.append(fn)
 
+print('metpaths and filenames \n', metpaths , '\n', filenames)
+
 gridmet_path = []
 agrimet_path = []
 common_names = []
@@ -47,15 +49,17 @@ for mp, fn in zip(metpaths, filenames):
     print(mp)
 
     for gridmet_f in os.listdir(DRI_gridmet_root):
-        print(gridmet_f)
-        print('fn:', fn)
-        if fn in gridmet_f:
+        # print(gridmet_f)
+        # print('fn:', fn)
+        if fn in gridmet_f and fn == 'Sand Spring Valley':
+            print('fn:', fn)
+            print('gmp:', gridmet_f)
             gmp = os.path.join(DRI_gridmet_root, gridmet_f)
             gridmet_path.append(gmp)
             agrimet_path.append(mp)
             common_names.append(fn)
 
-print(agrimet_path, '\n', gridmet_path)
+print(agrimet_path, '\n', gridmet_path, '\n', common_names)
 # read in the corresponding DRI file and the gridmet file.
 for mp, gmp, cn in zip(metpaths, gridmet_path, common_names):
     # print(gmp)
@@ -63,6 +67,7 @@ for mp, gmp, cn in zip(metpaths, gridmet_path, common_names):
     lon = gm['Lon'].tolist()[0]
     lat = gm['Lat'].tolist()[0]
     lonlat = (lon, lat)
+    print('lonlat: ', lonlat)
     meters_abv_sl = gm['elevation_m'].tolist()[0]
     print(meters_abv_sl, '\n sealevel')
 
