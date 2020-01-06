@@ -20,7 +20,7 @@ from ETref_tools.refet_functions import *
 """
 This script supports calculating daily reference ET from a pandas dataframe containing daily meteorological parameters.
 
-The functionality should include (eventually)
+The functionality Includes
 
 1) support for renaming df columns to a standard format.
 2) support for gapfilling potential missing data (this maybe can be left up to metdata_preprocessor.py)

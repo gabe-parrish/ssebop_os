@@ -22,10 +22,11 @@ from ETref_tools.metdata_preprocessor import dri_preprocess
 from SEEBop_os.raster_utils import gridmet_eto_reader
 
 
+"""In this script I'm comparing how different my ETo calculation based on daily average values is different from DRIs ET supposedly calculated from hourly data"""
+
 DRI_testfile = r'C:\Users\gparrish\Desktop\DRI_2011_test'
 SSV = r'Z:\Users\Gabe\refET\DRI_Agrimet_Metfiles\Sand Spring Valley.txt'
 gridmet_ssv = r'C:\Users\gparrish\Desktop\gridmet_test.csv'
-
 
 # ================= Sand Spring Valley (DRI - Agrimet/Blankenau) =================
 # --- Constants ----
@@ -50,13 +51,10 @@ sand_df = calc_daily_ETo_uniformat(dfr=sand_df, meters_abv_sealevel=meters_abv_s
 l_ETo = sand_df['ETo']
 l_date = sand_df.index
 
-
 # ================= Sand Spring Valley DRI Calculated ET =================
 
 et = []
-
 counts = []
-
 datet = []
 
 with open(DRI_testfile, 'r') as rfile:
@@ -68,30 +66,32 @@ with open(DRI_testfile, 'r') as rfile:
         line = [i.strip(' ') for i in line]
         line = [i for i in line if i != '']
         print(line)
-
+        # using ASCE standard ET
         et.append(float(line[-3]))
+        # # using Penman ET
+        # et.append(float(line[-2]))
         datet.append(datetime.strptime(line[0], '%m/%d/%Y'))
         count += 1
 
-
-# ================= GRIDMET ETo for Sand Spring Valley DRI =================
+# ================= GRIDMET ETo for Sand Spring Valley DRI =========
 
 gridmet_df = gridmet_eto_reader(gridmet_eto_loc=gridmet_ssv, smoothing=False)
 
-
-
-# ================= Compare Parrish and DRI ref et # TODO - ETo or ETr? =================
-
-
-
+# ================= Compare Parrish and DRI ref et =================
+#
+# TODO - ETo or ETr?
 
 d = {'et': et, 'count': counts, 'date': datet}
 
 df = pd.DataFrame(d, columns=['et', 'count', 'date'])
 df.set_index('date', inplace=True)
+
+
+
+
 # df = df.resample('1M').sum()
 
-plt.plot(df.index, df.et, color='black', label='DRI')
+plt.plot(df.index, df.et, color='black', label='DRI ASCE ET')
 plt.plot(l_date, l_ETo, color='green', label='Gabe')
 plt.plot(gridmet_df.index, gridmet_df['ETo'], color='blue', label='GRIDMET')
 # plt.scatter(counts, et, facecolor='none')
@@ -99,8 +99,37 @@ plt.title('Sand Spring Valley DRI Test')
 plt.legend()
 plt.show()
 
-# # df = df.resample('1M').sum()
-#
-# plt.plot(df['count'], df['et'])
-# plt.show()
+# Compare Parrish and DRI ref ET on monthly timestep
+df = df.resample('1M').sum()
+sand_df = sand_df.resample('1M').sum()
+gridmet_df = gridmet_df.resample('1M').sum()
 
+# Also, plot the percent difference alongside
+# get percent difference of gridmet and DRI
+pdiff = (abs(sand_df['ETo'] - df.et) / df.et) * 100
+print(pdiff)
+
+# plot the percent difference between ME and DRI
+pdiff_GM = (abs(gridmet_df['ETo'] - df.et) / df.et) * 100
+
+fig, ax = plt.subplots(2, 1, sharex=True)
+
+ax[0].plot(df.index, df.et, color='black', label='DRI ASCE RefET')
+ax[0].plot(sand_df.index, sand_df.ETo, color='green', label='Gabe')
+ax[0].plot(gridmet_df.index, gridmet_df.ETo, color='blue', label='Gridmet ETo')
+ax[0].set(xlabel='Date', ylabel='mm of ETo',
+              title='Monthly Cumulative Station ETo Sand Spring Valley')
+ax[0].legend()
+
+ax[1].plot(pdiff.index, pdiff, label='percent difference Gabe-DRI')
+ax[1].plot(pdiff_GM.index, pdiff_GM, label='percent difference Gridmet-DRI')
+ax[1].legend()
+ax[1].set(xlabel='Date', ylabel='% error assuming DRI is correct',
+              title='Monthly Cumulative Station ETo % difference Sand Spring Valley')
+
+
+# TODO - Calculate ET percent difference
+
+
+plt.legend()
+plt.show()
