@@ -23,6 +23,7 @@ from bs4 import BeautifulSoup
 import requests
 # ============= standard library imports ========================
 
+# requests.get()
 
 class AzmetScrape():
 
@@ -32,19 +33,63 @@ class AzmetScrape():
         site = requests.get(url)
         self.content = self.site.content
 
-        self.soup = BeautifulSoup(self.content, 'lxml')
+        self.soup = BeautifulSoup(self.content, 'html5lib')
 
 
 
 
-azmet_historical = 'https://cals.arizona.edu/AZMET/az-data.htm'
+azmet_historical = r'https://cals.arizona.edu/AZMET/az-data.htm'
 
-azmet_sitepage = requests.get(azmet_historical)
-azmet_content = azmet_sitepage.content
 
-# parse the html content
-soup = BeautifulSoup(azmet_content)
-print(soup.text)
+with open(r'C:\Users\gparrish\Downloads\az-data.htm', 'r') as cleanfile:
+    soup = BeautifulSoup(cleanfile, features="lxml")
+# print(soup.table)
+
+    # Find all the links in the files
+    for t in soup.find_all('a'):
+
+        # Now identify each site and it's name and build a path for requests to follow
+        if t.get('target') == '_blank':
+            # this is what we're going to write to.
+            textlines = []
+            print(t)
+            name = t.b
+            print(name)
+            link_stub = t.get('href')
+
+            full_url = f'{azmet_historical}/{link_stub}'
+
+            # grab the met tower site http code
+            azmet_sitepage = requests.get(full_url, verify=False)
+            azmet_content = azmet_sitepage.content
+            site_soup = BeautifulSoup(azmet_content, features='lxml')
+
+            # GET ALL THE DAILY RAW DATA for EACH YEAR.... it's comma separated and has the full date plus other shit...
+
+
+    # for line in soup.contents:
+    #     print(line)
+
+
+
+# for c in soup.find('center'):
+#     print(c)
+#
+# for aa in soup.find_all('ul', recursive=True):
+#
+#     print(aa)
+#     print(aa.contents)
+#
+#     # for tag in tr.descendants:
+#         # tablebits = tag.contents
+#         # print(tag)
+#         # for child in tag.children:
+#         #     print(child)
+#         #
+#         #     for aa in child.find_all('a'):
+#         #         print(aa)
+#             # for i in child.descendants:
+#             #     print(i)
 
 
 
