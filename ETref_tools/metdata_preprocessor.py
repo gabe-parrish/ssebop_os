@@ -20,9 +20,12 @@ from datetime import datetime, timedelta
 # ============= standard library imports ========================
 from utils.os_utils import windows_path_fix
 from ETref_tools.refet_functions import conv_F_to_C, conv_mph_to_mps, conv_in_to_mm
+
+
 """This script will include functions for preprocessing Meteorological data from a given source. The functions here 
 are bespoke to the weather station raw data format that is downloaded. The data will then be used to calculate ETo
  using dataframe_calc_daily_ETr.py and the functions in refet_functions.py"""
+
 
 def strip_space_separated(space_separated_file):
     """For stripping lines of space separated files into a big list of lists"""
@@ -184,8 +187,8 @@ def leyendecker_preprocess(metpath):
 def airport_preprocess(weather_metpath):
     pass
 
-def dri_preprocess(metpath):
-    """preprocessing DRI Agrimet textfiles"""
+def dri_preprocess(metpath, interpolate=True, terp_lim=3):
+    """preprocessing DRI NICE Net textfiles"""
 
     # todo ==== Generalize this bit of code to work for any metdata ====
     data_rows = []
@@ -203,8 +206,8 @@ def dri_preprocess(metpath):
 
             # if len(line_lst) == 41:
             data_rows.append(line_lst)
-
     # ^^^^^^ Generalize this bit of code to work for any metdata text file eh?^^^^^
+
     rawdata = data_rows[6:-2]
 
     data_cols = ['Date', 'Year', 'DOY', 'DOR', 'Solar', 'aveSpeed', 'wind_dir', 'speed_gust', 'mean_air_temp',
@@ -241,12 +244,23 @@ def dri_preprocess(metpath):
     print(met_df['dt'])
     met_df = met_df.set_index('dt')
 
+    if interpolate:
+        # USE PANDAS interpolation to cut down on missing values
+        print('DOING A LINEAR INTERPOLATION with a limit of {} spots'.format(terp_lim))
+        met_df.interpolate(method='linear', limit=terp_lim)
+
+    if not interpolate:
+        print('NOT INTERPOLATING!!!')
+
     print('dri index', met_df.index)
 
     met_df.to_csv(r'C:\Users\gparrish\Desktop\dri_test.csv')
 
     return met_df
 
+def azmet_preprocess(metpath):
+    """"""
+    pass
 
 #
 # def uscrn_preprocess(metpath, header_txt):

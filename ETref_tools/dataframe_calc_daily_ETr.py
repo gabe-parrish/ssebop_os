@@ -19,6 +19,7 @@ from ETref_tools.refet_functions import *
 
 """
 This script supports calculating daily reference ET from a pandas dataframe containing daily meteorological parameters.
+(Generaly used after metdata_preprocessor)
 
 The functionality Includes
 

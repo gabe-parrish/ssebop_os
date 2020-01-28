@@ -17,19 +17,16 @@ import os
 from utils.os_utils import windows_path_fix
 from SEEBop_os.raster_utils import gridmet_extract_point
 
-""" script to extract GRIDMET from state of NV NICE network for use in Comparison"""
-
+"""OK MESONET script to extract GRIDMET for use in Comparison"""
 
 shape_root = r'Z:\Users\Gabe\refET\refET_geo_files'
-shape_name = r'DRI_agrimet_sites.shp'
+shape_name = r'OK_mesonet_sites_all_latlon.shp'
 
 gridmet_ETo_root = r'Z:\Data\ReferenceET\USA\Gridmet\Daily\ETo'
 
 start = (1984, 1, 1)
 end = (2017, 12, 31)
 
-output = r'Z:\Users\Gabe\refET\DRI_Agrimet_GridMet'
-
+output = r'Z:\Users\Gabe\refET\OKMesonet_GridMet'
 gridmet_extract_point(root=gridmet_ETo_root, shape_root=shape_root, shape_name=shape_name, start=start, end=end,
-                      output_root=output, field='Station Na', elevation_field='Elevation', elevation_meters=False)
-
+                      output_root=output, field='stid', elevation_field='elev', elevation_meters=True)

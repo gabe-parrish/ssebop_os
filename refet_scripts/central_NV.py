@@ -32,7 +32,7 @@ pd.plotting.register_matplotlib_converters()
 
 # mpath = r'Z:\Users\Gabe\refET\met_datasets\central_NV\Mercury_NV_USCRN_5min.txt'
 # header = r'Z:\Users\Gabe\refET\met_datasets\USCRN_5min_headers'
-#
+
 # # uscrn_preprocess(metpath=mpath, header_txt=header)
 # uscrn_df = uscrn_subhourly(metpath=mpath, header_txt=header)
 
@@ -67,7 +67,6 @@ meters_abv_sl = 1466
 lonlat = (-115.7975, 37.646667)
 
 sand_spring = windows_path_fix(r'Z:\Users\Gabe\refET\met_datasets\central_NV\Sand_Spring_Valley_NV_Agrimet_DRI.txt')
-
 sand_df = dri_preprocess(sand_spring)
 
 # uniformat to format the DF (this df is in the correct format, but we do it anyway for propriety)
@@ -228,8 +227,6 @@ ax[3].grid()
 plt.tight_layout()
 plt.legend()
 plt.show()
-
-
 
 
 ### ===== Sand Spring NV vs Gridmet ======
