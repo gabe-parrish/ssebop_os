@@ -297,8 +297,6 @@ def calc_Rns(Rs, a=0.23):
     return Rns
 
 def calc_Rnl(Tmax, Tmin, e_actual, Rs, Rso, Ra=None):
-
-
     """
     Rate of outgoing long wave radiation is proportional to the temperature of the surace raised to the fourth.
     :param Tmax: maximum temp deg C
@@ -312,6 +310,7 @@ def calc_Rnl(Tmax, Tmin, e_actual, Rs, Rso, Ra=None):
     # # in MJ/(K^4 * m^2 * day)
     boltzman_c = 4.903e-9
     # print(boltzman_c)
+    # print('e_a', e_actual)
     mid_term = (0.34 - (0.14 * math.sqrt(e_actual)))
     # print('middle term', mid_term)
     fcd = ((1.35 * (Rs / Rso)) - 0.35)

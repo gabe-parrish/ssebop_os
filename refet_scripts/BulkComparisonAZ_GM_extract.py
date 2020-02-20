@@ -30,5 +30,3 @@ end = (2017, 12, 31)
 output = r'Z:\Users\Gabe\refET\AZMET_GridMet'
 gridmet_extract_point(root=gridmet_ETo_root, shape_root=shape_root, shape_name=shape_name, start=start, end=end,
                       output_root=output, field='Station Na', elevation_field='meters', elevation_meters=True)
-
-

@@ -65,14 +65,10 @@ def metdata_df_uniformat(df, max_air, min_air, avg_air, solar, ppt, maxrelhum, m
     print('index used \n {}'.format(df.index))
 
     return new_df
-    # {'MaxAir': np.max, 'MinAir': np.min, 'AvgAir': np.mean, 'Solar': np.sum,
-    #                                    'Ppt': np.sum, 'MaxRelHum':np.max, 'MinRelHum':np.min, 'RelHum': np.mean,
-    #                                     'ScWndMg': np.mean, '5cmSoil':np.mean, '20cmSoil': np.mean, 'doy': np.median}
 
 def calc_daily_ETo_uniformat(dfr, meters_abv_sealevel, lonlat, smoothing=False):
     """ETo after 'Step by Step Calculation of the Penman-Monteith Evapotranspiration
      (FAO-56 Method)' by Zotarelli et al"""
-
 
     #  # TODO - make options to deal with situations where a dataset may be missing e.g. max and min rel humidity...
 

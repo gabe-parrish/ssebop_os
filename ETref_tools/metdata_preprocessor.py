@@ -183,7 +183,6 @@ def leyendecker_preprocess(metpath):
 
     return ld_csv
 
-
 def airport_preprocess(weather_metpath):
     pass
 
@@ -261,6 +260,133 @@ def dri_preprocess(metpath, interpolate=True, terp_lim=3):
 def azmet_preprocess(metpath):
     """"""
     pass
+
+
+def okmesonet_preprocess(metpath):
+    """"""
+
+    def convert_f_to_c(degrees_f):
+        """"""
+        deg_C = (degrees_f - 32) * (5/9)
+        return deg_C
+
+    def convert_mph_to_mps(mph):
+        """"""
+        mps = mph * 0.44704
+        return mps
+
+    def convert_in_to_mm(inches):
+        """"""
+        mm = inches * 25.4
+        return mm
+
+    okdf = pd.read_csv(metpath, header=0, index_col=False)
+
+    # Taking care of the Nodata Values
+    okdf[(okdf == 999) | (okdf == 999.0) | (okdf == 0.0) | (okdf == 0) | (okdf == -996) | (okdf == -996.0) | (okdf == -999) | (okdf == -999.0)] = np.nan
+
+    okdf['dt'] = okdf.apply(lambda x: datetime.strptime("{}-{:02d}-{:02d}".format(int(x['YEAR']), int(x['MONTH']), int(x['DAY'])), '%Y-%m-%d'), axis=1)
+    okdf['DOY'] = okdf.apply(lambda x: x['dt'].timetuple().tm_yday, axis=1)
+
+    okdf['TMAX'] = okdf.apply(lambda x: convert_f_to_c(x['TMAX']), axis=1)
+    okdf['TMIN'] = okdf.apply(lambda x: convert_f_to_c(x['TMIN']), axis=1)
+    okdf['TAVG'] = okdf.apply(lambda x: convert_f_to_c(x['TAVG']), axis=1)
+
+    okdf['RAIN'] = okdf.apply(lambda x: convert_in_to_mm(x['RAIN']), axis=1)
+
+    okdf['HMAX'] = okdf.apply(lambda x: convert_mph_to_mps(x['HMAX']), axis=1)
+    okdf['HMIN'] = okdf.apply(lambda x: convert_mph_to_mps(x['HMIN']), axis=1)
+    okdf['HAVG'] = okdf.apply(lambda x: convert_mph_to_mps(x['HAVG']), axis=1)
+
+    # set the index to the datetime.
+    okdf = okdf.set_index('dt')
+
+    return okdf
+
+
+def okmesonet_separate(metpath, output_loc):
+    """
+    This function is called on it's own to break up daily metdata from OK mesonet into separate files
+    corresponding to site.
+    :param metpath: string path
+    :param output_loc: string path where all .csv files for 140+ sites will be written.
+    :return:
+    """
+
+    # # we split the line and not ln bc we want to keep the \n HERE WE ARE FIXING SOME UNITS WE NEED...
+    # # ...FOR OUR CALCULATION
+    # ln_lst = convert_seven_indices(line.split(','))
+    # # undo the split of the list with the corrected units
+    # units_line = ','.join(ln_lst)
+
+    def convert_f_to_c(degrees_f):
+
+        deg_C = (degrees_f - 32) * (5/9)
+        return deg_C
+
+    def convert_mph_to_mps(mph):
+
+        mps = mph * 0.44704
+        return mps
+
+    def convert_in_to_mm(inches):
+        mm = inches * 25.4
+        return mm
+
+    def convert_seven_indices(ln_lst):
+        """"""
+        # convert temperatures
+        ln_lst[4] = str(convert_f_to_c(float(ln_lst[4])))
+        ln_lst[5] = str(convert_f_to_c(float(ln_lst[5])))
+        ln_lst[6] = str(convert_f_to_c(float(ln_lst[6])))
+
+        # convert wind speeds
+        ln_lst[28] = str(convert_mph_to_mps(float(ln_lst[28])))
+        ln_lst[29] = str(convert_mph_to_mps(float(ln_lst[29])))
+        ln_lst[30] = str(convert_mph_to_mps(float(ln_lst[30])))
+
+        ln_lst[38] = str(conv_in_to_mm(float(ln_lst[38])))
+
+        return ln_lst
+
+
+    doc_dict = {}
+    with open(metpath, 'r') as rfile:
+        for i, line in enumerate(rfile):
+        # for i, line in zip(range(10), rfile):
+            print(line)
+            if i == 0:
+                col_line = line.strip('\n')
+            else:
+                # print(line)
+                ln = line.strip('\n')
+                ln_lst = ln.split(',')
+                stid = ln_lst[3]
+
+                # print('id: ', stid)
+                doc_dict[stid] = []
+
+    with open(metpath, 'r') as rfile:
+        for i, line in enumerate(rfile):
+        # for i, line in zip(range(10), rfile):
+            if i != 0:
+                ln = line.strip('\n')
+                ln_lst = ln.split(',')
+                stid = ln_lst[3]
+
+                # print('id append:', stid)
+                doc_dict[stid].append(line)
+
+    # print('doc dict, \n', doc_dict)
+    # print('cols:', col_line)
+
+    outfilenames = []
+    for k, v in doc_dict.items():
+        with open(os.path.join(output_loc, f'{k}.csv'), 'w') as wfile:
+            outfilenames.append(f'{k}.csv')
+            wfile.write(col_line)
+            for line in v:
+                wfile.write(line)
 
 #
 # def uscrn_preprocess(metpath, header_txt):
@@ -438,10 +564,13 @@ if __name__ == "__main__":
 
     # print('done')
 
-    mpath = r'Z:\Users\Gabe\refET\met_datasets\central_NV\Mercury_NV_USCRN_5min.txt'
-    header = r'Z:\Users\Gabe\refET\met_datasets\USCRN_5min_headers'
-
-    # uscrn_preprocess(metpath=mpath, header_txt=header)
-    uscrn_subhourly(metpath=mpath, header_txt=header)
-
-    # TODO - WE need a script way to pull the sub-hourly data offline. copy paste is not practical.
+    # mpath = r'Z:\Users\Gabe\refET\met_datasets\central_NV\Mercury_NV_USCRN_5min.txt'
+#     # header = r'Z:\Users\Gabe\refET\met_datasets\USCRN_5min_headers'
+#     #
+#     # # uscrn_preprocess(metpath=mpath, header_txt=header)
+#     # uscrn_subhourly(metpath=mpath, header_txt=header)
+#     #
+#     # # TODO - WE need a script way to pull the sub-hourly data offline. copy paste is not practical.
+    mesonet_path = r'Z:\Users\Gabe\refET\OK_Mesonet\64040170\64040170.csv'
+    mnet_path = r'Z:\Users\Gabe\refET\OK_Mesonet'
+    okmesonet_separate(metpath=mesonet_path, output_loc=mnet_path)
