@@ -388,43 +388,62 @@ def okmesonet_separate(metpath, output_loc):
             for line in v:
                 wfile.write(line)
 
-#
-# def uscrn_preprocess(metpath, header_txt):
-#     """preprocessing USCRN weather data textfiles"""
-#
-#     # get the header as a list first
-#
-#     header_file_rows = strip_space_separated(header_txt)
-#
-#     print(header_file_rows)
-#
-#     headers = [i[1] for i in header_file_rows[2:]]
-#
-#     print(headers)
-#
-#     metdata = strip_space_separated(metpath)
-#
-#     print(metdata)
-#
-#     met_dict = {}
-#
-#     for h in headers:
-#         met_dict[h] = []
-#
-#     for line in metdata:
-#
-#         for i, j in zip(line, headers):
-#
-#             met_dict[j].append(i)
-#
-#
-#     met_df = pd.DataFrame(met_dict, columns=headers)
-#
-#     print(met_df)
-#
-#     # No unit corrections necessary
-#
-#     return met_df
+
+def illinois_CN_reformat(metpath, output_loc):
+    """"""
+
+    metfile = os.path.split(metpath)[1]
+    metname = metfile[0:3]
+    outfile = os.path.join(output_loc, '{}.csv'.format(metname))
+    lines = []
+    with open(metpath, 'r') as rfile:
+
+        for i, line in enumerate(rfile):
+            if i == 0:
+                cols = line.split('\t')
+                columns = '{}'.format(','.join(cols))
+                print(len(columns))
+            elif i == 1:
+                print('not_cols', line.split('\t'))
+            else:
+                line = line.strip('\n')
+                ln = line.split('\t')
+                l ='{}\n'.format(','.join(ln))
+                lines.append(l)
+
+    with open(outfile, 'w') as wfile:
+        wfile.write(columns)
+        for i in lines:
+            if i.split(',')[0].isdigit():
+                wfile.write(i)
+
+def illinois_CN_preprocess(metpath):
+    """"""
+    df = pd.read_csv(metpath, header=0, index_col=False)
+
+    # Taking care of the Nodata Values
+    df[(df == 999) | (df == 999.0) | (df == 0.0) | (df == 0) | (df == -996) | (df == -996.0) | (
+                df == -999) | (df == -999.0) | (df == '----')] = np.nan
+
+    df['dt'] = df.apply(
+        lambda x: datetime.strptime("{}-{:02d}-{:02d}".format(int(x['year']), int(x['month']), int(x['day'])),
+                                    '%Y-%m-%d'), axis=1)
+    df['DOY'] = df.apply(lambda x: x['dt'].timetuple().tm_yday, axis=1)
+
+    df['max_air_temp'] = df.apply(lambda x: conv_F_to_C(x['max_air_temp']), axis=1)
+    df['min_air_temp'] = df.apply(lambda x: conv_F_to_C(x['min_air_temp']), axis=1)
+    df['avg_air_temp'] = df.apply(lambda x: conv_F_to_C(x['avg_air_temp']), axis=1)
+
+    df['precip'] = df.apply(lambda x: conv_in_to_mm(x['precip']), axis=1)
+    df['pot_evapot'] = df.apply(lambda x: conv_in_to_mm(x['pot_evapot']), axis=1)
+
+    df['max_wind_gust'] = df.apply(lambda x: conv_mph_to_mps(x['max_wind_gust']), axis=1)
+    df['avg_wind_speed'] = df.apply(lambda x: conv_mph_to_mps(x['avg_wind_speed']), axis=1)
+
+    # set the index to the datetime.
+    df = df.set_index('dt')
+
+    return df
 
 def uscrn_subhourly(metpath, header_txt):
     """
@@ -570,7 +589,16 @@ if __name__ == "__main__":
 #     # # uscrn_preprocess(metpath=mpath, header_txt=header)
 #     # uscrn_subhourly(metpath=mpath, header_txt=header)
 #     #
-#     # # TODO - WE need a script way to pull the sub-hourly data offline. copy paste is not practical.
-    mesonet_path = r'Z:\Users\Gabe\refET\OK_Mesonet\64040170\64040170.csv'
-    mnet_path = r'Z:\Users\Gabe\refET\OK_Mesonet'
-    okmesonet_separate(metpath=mesonet_path, output_loc=mnet_path)
+# #     # # TODO - WE need a script way to pull the sub-hourly data offline. copy paste is not practical.
+#     mesonet_path = r'Z:\Users\Gabe\refET\OK_Mesonet\64040170\64040170.csv'
+#     mnet_path = r'Z:\Users\Gabe\refET\OK_Mesonet'
+#     okmesonet_separate(metpath=mesonet_path, output_loc=mnet_path)
+
+
+    # === Illinois ===
+
+    root = r'Z:\Users\Gabe\refET\Illinois_CN\allstations_archived'
+
+    for f in os.listdir(root):
+        metpath = os.path.join(root, f)
+        illinois_CN_reformat(metpath, output_loc=r'Z:\Users\Gabe\refET\Illinois_CN\reformatted')

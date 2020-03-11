@@ -23,9 +23,9 @@ from ETref_tools.metdata_preprocessor import okmesonet_preprocess
 
 """Here we compare a bunch of extracted (see BulkComparisonOK_GM_extract) Oklahoma Mesonet sites to
  Extracted Gridmet via plotting with matplotlib. The script also outputs some files useful for analysis like accumulated
- monthly and yearly ETo. Prior to this script the cunction metdata_preprocesor.okmesonet_preprocess() was used to 
- separate files from a data request mega-file into individual files that can be dealt with individually and that 
- correspond to extracted GRIDMET files."""
+ monthly and yearly ETo. Prior to this script the function metdata_preprocesor.okmesonet_preprocess() in 
+ metdata_preprocessor.py was used to separate files from a data request mega-file into individual files that can be 
+ dealt with individually and that correspond to extracted GRIDMET files."""
 
 
 gridmet_root = r'Z:\Users\Gabe\refET\OKMesonet_GridMet'
