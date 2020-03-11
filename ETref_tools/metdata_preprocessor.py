@@ -423,7 +423,8 @@ def illinois_CN_preprocess(metpath):
 
     # Taking care of the Nodata Values
     df[(df == 999) | (df == 999.0) | (df == 0.0) | (df == 0) | (df == -996) | (df == -996.0) | (
-                df == -999) | (df == -999.0) | (df == '----')] = np.nan
+                df == -999) | (df == -999.0) | (df == '----') | (df == '-----') | (df == '---') |
+       (df == '---- ') | (df == '--- ') | (df == '0.00 M')] = np.nan
 
     df['dt'] = df.apply(
         lambda x: datetime.strptime("{}-{:02d}-{:02d}".format(int(x['year']), int(x['month']), int(x['day'])),
@@ -439,6 +440,11 @@ def illinois_CN_preprocess(metpath):
 
     df['max_wind_gust'] = df.apply(lambda x: conv_mph_to_mps(x['max_wind_gust']), axis=1)
     df['avg_wind_speed'] = df.apply(lambda x: conv_mph_to_mps(x['avg_wind_speed']), axis=1)
+
+    df['min_rel_hum'] = df.apply(lambda x: float(x['min_rel_hum']), axis=1)
+    df['max_rel_hum'] = df.apply(lambda x: float(x['max_rel_hum']), axis=1)
+
+    df['sol_rad'] = df.apply(lambda x: float(x['sol_rad']), axis=1)
 
     # set the index to the datetime.
     df = df.set_index('dt')

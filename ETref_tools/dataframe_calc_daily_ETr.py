@@ -30,7 +30,7 @@ The functionality Includes
 --- GELP 10/2/2019 ---
 """
 
-def metdata_df_uniformat(df, max_air, min_air, avg_air, solar, ppt, maxrelhum, minrelhum, avgrelhum, sc_wind_mg, doy):
+def metdata_df_uniformat(df, max_air, min_air, avg_air, solar, ppt, maxrelhum, minrelhum, avgrelhum, sc_wind_mg, doy, agency_eto=False, agency_eto_key=None):
     """
     A tool for standardizing meteorological data from a dataframe. All columns of the dataframe must be present but need
     not be exlusive. All the units must be correct before this function is used.
@@ -60,6 +60,9 @@ def metdata_df_uniformat(df, max_air, min_air, avg_air, solar, ppt, maxrelhum, m
     new_df['RelHum'] = df[avgrelhum]
     new_df['ScWndMg'] = df[sc_wind_mg]
     new_df['doy'] = df[doy]
+
+    if agency_eto:
+        new_df['Agency_ETo'] = df[agency_eto_key]
 
     new_df.set_index(df.index)
     print('index used \n {}'.format(df.index))

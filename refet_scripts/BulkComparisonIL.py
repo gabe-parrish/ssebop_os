@@ -17,15 +17,15 @@ from matplotlib import pyplot as plt
 import pandas as pd
 # ============= standard library imports ========================
 
-"""Here we compare a bunch of extracted (see BulkComparisonNV_GM_extract) DRI agrimet sites in Nevada to
+"""Here we compare a bunch of extracted (see BulkComparisonIL_GM_extract) Illinois Climate Network
  Extracted Gridmet via plotting with matplotlib"""
 
-shape = r'Z:\Users\Gabe\refET\OK_Mesonet\mesonet_sites_shape\mesonet_sites_shape\ok_mesonet_sites_all_20181031.shp'
-yearly_output = r'Z:\Users\Gabe\refET\OKMESONET_GRIDMET_yearly_compare'
-monthly_output = r'Z:\Users\Gabe\refET\OKMESONET_GRIDMET_monthly_compare'
+shape = r'Z:\Users\Gabe\refET\Illinois_CN\ICN_locations.shp'
+yearly_output = r'Z:\Users\Gabe\refET\Illinois_CN\ICN_GRIDMET_yearly_compare'
+monthly_output = r'Z:\Users\Gabe\refET\Illinois_CN\ICN_GRIDMET_monthly_compare'
 
-fig_output = r'Z:\Users\Gabe\refET\ok_figs_yearly'
-# fig_output = r'Z:\Users\Gabe\refET\ok_figs_monthly'
+yearly_fig_output = r'Z:\Users\Gabe\refET\Illinois_CN\IL_figs_yearly'
+monthly_fig_output = r'Z:\Users\Gabe\refET\Illinois_CN\IL_figs_monthly'
 
 xbound_yr = 0 #500
 ybound_yr =1800
@@ -40,10 +40,10 @@ filenames = []
 
 # NOTE: The files in the yearly and monthly folder are created by code in TimeSeriesComparisonNV.py that used to be
 # here in THIS script.
-yearly_folder = r'Z:\Users\Gabe\refET\OKMESONET_GRIDMET_yearly_compare'
-monthly_folder = r'Z:\Users\Gabe\refET\OKMESONET_GRIDMET_monthly_compare'
+yearly_folder = r'Z:\Users\Gabe\refET\Illinois_CN\ICN_GRIDMET_yearly_compare'
+monthly_folder = r'Z:\Users\Gabe\refET\Illinois_CN\ICN_GRIDMET_monthly_compare'
 
- # ================ YEARLY BULK ======================
+# ================ YEARLY BULK ======================
 for i in os.listdir(yearly_folder):
     sitename = i.split('.')[0]
     print('path:', os.path.join(yearly_folder, i))
@@ -56,7 +56,7 @@ for i in os.listdir(yearly_folder):
     plt.xlabel('ETo Mesonet (mm)')
     plt.ylabel('ETo Gridmet (mm)')
     plt.grid()
-    plt.savefig(os.path.join(fig_output, '{}_Gabe_Calc_ETo_yearly.png'.format(sitename)))
+    plt.savefig(os.path.join(yearly_fig_output, '{}_Gabe_Calc_ETo_yearly.png'.format(sitename)))
     plt.close()
 
 
@@ -74,7 +74,7 @@ for i in os.listdir(monthly_folder):
     plt.ylabel('ETo Gridmet (mm)')
     plt.grid()
     # plt.show()
-    plt.savefig(os.path.join(fig_output, '{}_Gabe_Calc_ETo_monthly.png'.format(sitename)))
+    plt.savefig(os.path.join(monthly_fig_output, '{}_Gabe_Calc_ETo_monthly.png'.format(sitename)))
     plt.close()
 
 
@@ -92,7 +92,7 @@ for i, color in zip(sorted(dirlist), color_list):
     plt.scatter(m_df['ETo_Station'], m_df['EToGM'], edgecolors=color, facecolor='none', label=sitename)
 
 plt.title('All sites, Monthly Cumulative')
-plt.xlabel('ETo AZMET (mm)')
+plt.xlabel('ETo Station (mm)')
 plt.ylabel('ETo Gridmet (mm)')
 plt.grid()
 plt.legend()
@@ -113,7 +113,7 @@ for i, color in zip(sorted(dirlist), color_list):
     site_list.append(sitename)
     plt.scatter(yr_df['ETo_Station'], yr_df['EToGM'], edgecolors=color, facecolor='none', label=sitename)
 plt.title('All Sites, Yearly Cumulative')
-plt.xlabel('ETo AZMET (mm)')
+plt.xlabel('ETo Station (mm)')
 plt.ylabel('ETo Gridmet (mm)')
 plt.grid()
 plt.legend()
@@ -129,14 +129,16 @@ plt.plot((xbound_mo, ybound_mo), (xbound_mo, ybound_mo), color='red')
 color_list = ['black', 'grey', 'red', 'brown', 'tomato', 'darkorange', 'goldenrod', 'olive', 'olivedrab', 'fuchsia',
               'green', 'turquoise', 'teal', 'dodgerblue', 'blue', 'purple', 'plum', 'deeppink', 'crimson', 'tan', 'yellow', 'navy']
 dirlist = os.listdir(monthly_folder)
+print(len(dirlist), len(color_list), 'are there enough colors?')
 for i, color in zip(sorted(dirlist), color_list):
     sitename = i.split('.')[0]
     m_df = pd.read_csv(os.path.join(monthly_folder, i))
-    plt.scatter(m_df['ETo_AZ'], m_df['EToGM'], edgecolors=color, facecolor='none', label=sitename)
+    print(m_df.head())
+    plt.scatter(m_df['Agency_ETo'], m_df['ETo_Station'], edgecolors=color, facecolor='none', label=sitename)
 
-plt.title('All sites, Monthly Cumulative')
+plt.title('All sites, ASCE Monthly Cumulative')
 plt.xlabel('ETo ASCE (mm)')
-plt.ylabel('ETo Gridmet (mm)')
+plt.ylabel('ETo Station -Gabe- (mm)')
 plt.grid()
 plt.legend()
 plt.show()
@@ -153,10 +155,10 @@ for i, color in zip(sorted(dirlist), color_list):
     yr_df = pd.read_csv(os.path.join(yearly_folder, i))
     sitename = i.split('.')[0]
     site_list.append(sitename)
-    plt.scatter(yr_df['ETo_AZ'], yr_df['EToGM'], edgecolors=color, facecolor='none', label=sitename)
-plt.title('All Sites, Yearly Cumulative')
-plt.xlabel('ETo AZMET (mm)')
-plt.ylabel('ETo Gridmet (mm)')
+    plt.scatter(yr_df['Agency_ETo'], yr_df['ETo_Station'], edgecolors=color, facecolor='none', label=sitename)
+plt.title('All Sites, ASCE Yearly Cumulative')
+plt.xlabel('ETo ASCE (mm)')
+plt.ylabel('ETo Station -Gabe- (mm)')
 plt.grid()
 plt.legend()
 plt.show()

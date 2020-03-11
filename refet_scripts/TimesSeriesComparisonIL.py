@@ -19,7 +19,7 @@ import numpy as np
 # ============= standard library imports ========================
 from SEEBop_os.raster_utils import gridmet_eto_reader
 from ETref_tools.dataframe_calc_daily_ETr import metdata_df_uniformat, calc_daily_ETo_uniformat
-from ETref_tools.metdata_preprocessor import okmesonet_preprocess
+from ETref_tools.metdata_preprocessor import illinois_CN_preprocess
 
 """Here we compare a bunch of extracted (see BulkComparisonIL_GM_extract) Illinois Climate Network sites to
  Extracted Gridmet via plotting with matplotlib. The script also outputs some files useful for analysis like accumulated
@@ -85,9 +85,11 @@ for gmp, mp, mn in zip(gridmet_paths, mesonet_paths, names_in_common):
     meters_abv_sl = gm['elevation_m'].tolist()[0]
     print(meters_abv_sl, '\n sealevel')
 
-    m_df = okmesonet_preprocess(mp)
+    m_df = illinois_CN_preprocess(mp)
+    print('testing pot_evapot')
+    print(m_df.pot_evapot)
 
-    m_df['Year'] = m_df.apply(lambda x: int(x['YEAR']), axis=1)
+    m_df['Year'] = m_df.apply(lambda x: int(x['year']), axis=1)
 
     max_year = max(m_df['Year'].to_list())
     min_year = min(m_df['Year'].to_list())
@@ -100,11 +102,12 @@ for gmp, mp, mn in zip(gridmet_paths, mesonet_paths, names_in_common):
     print(m_df_complete_yrs.head(n=15))
 
     # rename the complete dataset m_df but getting the daily ETo from the avg calculations
-    m_df = metdata_df_uniformat(m_df_complete_yrs, max_air='TMAX', min_air='TMIN', avg_air='TAVG',
-                         solar='ATOT',
-                         ppt='RAIN', maxrelhum='HMAX', minrelhum='HMIN',
-                         avgrelhum='HAVG',
-                         sc_wind_mg='WSPD', doy='DOY')
+    print('testing pot 4454', m_df['pot_evapot'])
+    m_df = metdata_df_uniformat(m_df_complete_yrs, max_air='max_air_temp', min_air='min_air_temp', avg_air='avg_air_temp',
+                         solar='sol_rad',
+                         ppt='precip', maxrelhum='max_rel_hum', minrelhum='min_rel_hum',
+                         avgrelhum='avg_rel_hum',
+                         sc_wind_mg='avg_wind_speed', doy='DOY', agency_eto=True, agency_eto_key='pot_evapot')
 
 
     m_df = calc_daily_ETo_uniformat(m_df, meters_abv_sealevel=meters_abv_sl, lonlat=lonlat, smoothing=False)
