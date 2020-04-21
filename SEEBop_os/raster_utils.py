@@ -262,6 +262,34 @@ def gridmet_extract_point(root, shape_root, shape_name, start, end, output_root,
                 wfile.write('{},{},{},{},{}\n'.format(v, d, x, y, elev))
 
 
+def convert_raster_to_array(input_raster_path, raster=None, band=1):
+    """
+    Convert .tif raster into a numpy numerical array.
+
+    :rtype: object
+    :param input_raster_path: Path to raster.
+    :param raster: Raster name with \*.tif
+    :param band: Band of raster sought.
+
+    :return: Numpy array.
+    """
+    # print "input raster path", input_raster_path
+    # print "raster", raster
+    p = input_raster_path
+    if raster is not None:
+        p = os.path.join(p, raster)
+
+    # print "filepath", os.path.isfile(p)
+    # print p
+    if not os.path.isfile(p):
+        print
+        'Not a valid file: {}'.format(p)
+
+    raster_open = gdal.Open(p)
+    ras = raster_open.GetRasterBand(band).ReadAsArray()
+    return ras
+
+
 
 def gridmet_eto_reader(gridmet_eto_loc, smoothing=False):
     """

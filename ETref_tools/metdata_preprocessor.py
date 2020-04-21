@@ -19,7 +19,7 @@ import math
 from datetime import datetime, timedelta
 # ============= standard library imports ========================
 from utils.os_utils import windows_path_fix
-from ETref_tools.refet_functions import conv_F_to_C, conv_mph_to_mps, conv_in_to_mm
+from ETref_tools.refet_functions import conv_F_to_C, conv_mph_to_mps, conv_in_to_mm, conv_avgWattsRad_to_DailyKJmSquared
 
 
 """This script will include functions for preprocessing Meteorological data from a given source. The functions here 
@@ -388,6 +388,46 @@ def okmesonet_separate(metpath, output_loc):
             for line in v:
                 wfile.write(line)
 
+def delaware_separate(metpath, output_loc):
+    """"""
+
+    doc_dict = {}
+    with open(metpath, 'r') as rfile:
+        for i, line in enumerate(rfile):
+            # for i, line in zip(range(10), rfile):
+            print(line)
+            if i == 0:
+                col_line = line.strip('\n')
+            else:
+                # print(line)
+                ln = line.strip('\n')
+                ln_lst = ln.split(',')
+                stid = ln_lst[0]
+
+                # print('id: ', stid)
+                doc_dict[stid] = []
+
+    with open(metpath, 'r') as rfile:
+        for i, line in enumerate(rfile):
+            # for i, line in zip(range(10), rfile):
+            if i != 0:
+                ln = line.strip('\n')
+                ln_lst = ln.split(',')
+                stid = ln_lst[0]
+
+                # print('id append:', stid)
+                doc_dict[stid].append(line)
+
+    # print('doc dict, \n', doc_dict)
+    # print('cols:', col_line)
+
+    outfilenames = []
+    for k, v in doc_dict.items():
+        with open(os.path.join(output_loc, f'{k}.csv'), 'w') as wfile:
+            outfilenames.append(f'{k}.csv')
+            wfile.write(col_line)
+            for line in v:
+                wfile.write(line)
 
 def illinois_CN_reformat(metpath, output_loc):
     """"""
@@ -566,7 +606,6 @@ def uscrn_subhourly(metpath, header_txt):
 
     return met_df
 
-
 def uscrn_batch_agg(dirpath, header_path):
     """"Having downloaded a bunch of USCRN data as textfiles and put them all into a folder, this script will grab them,
 join them together and make one big text file. in future use uscrn_ftp.py once written"""
@@ -581,6 +620,110 @@ join them together and make one big text file. in future use uscrn_ftp.py once w
 
     uscrn_df = pd.concat(df_list)
     return uscrn_df
+
+def nc_econet_reformat(metpath, output_loc):
+    """"""
+    filen = os.path.split(metpath)[1]
+    sitename = filen.split('_')[-2]
+
+    datas = []
+    with open(metpath, 'r') as rfile:
+        for i, line in enumerate(rfile):
+            ln = line.split('\t')
+            print(ln)
+            if i == 0:
+                columns = ','.join(ln)
+                print(columns)
+
+            else:
+                dataline = ','.join(ln)
+                print(dataline)
+                datas.append(dataline)
+
+    with open(os.path.join(output_loc, '{}.csv'.format(sitename)), 'w') as wfile:
+        wfile.write(columns)
+        for dline in datas:
+            wfile.write(dline)
+
+def nc_econet_preprocess(metpath):
+    """"""
+
+    # == NOTE:  solar rad for NC is available as Average Solar Radiation in W/m2 not total daily solar radiation ==
+    df = pd.read_csv(metpath, header=0, index_col=False)
+
+    # Taking care of the Nodata Values
+    df[(df == 999) | (df == 999.0) | (df == 0.0) | (df == 0) | (df == -996) | (df == -996.0) | (
+            df == -999) | (df == -999.0) | (df == '----') | (df == '-----') | (df == '---') |
+       (df == '---- ') | (df == '--- ') | (df == '0.00 M') | (df == '') | (df == ' ') | (df == -6999) | (df == -6999.0)
+       | (df == '-6999')] = np.nan
+
+    df['dt'] = df.apply(lambda x: datetime.strptime(x['Date/Time (EST)'], '%Y-%m-%d'), axis=1)
+
+    df['DOY'] = df.apply(lambda x: x['dt'].timetuple().tm_yday, axis=1)
+
+    df['max_air_temp'] = df.apply(lambda x: conv_F_to_C(x['Maximum Temperature (F)']), axis=1)
+    df['min_air_temp'] = df.apply(lambda x: conv_F_to_C(x['Minimum Temperature (F)']), axis=1)
+    df['avg_air_temp'] = df.apply(lambda x: conv_F_to_C(x['Average Temperature (F)']), axis=1)
+
+    # NOTE NC ECONET does not come with precip
+    # df['precip'] = df.apply(lambda x: conv_in_to_mm(x['precip']), axis=1)
+    df['pot_evapot'] = df.apply(lambda x: conv_in_to_mm(x['Penman-Monteith Reference Crop Evapotranspiration (in)']), axis=1)
+
+    df['max_wind_gust'] = df.apply(lambda x: conv_mph_to_mps(x['Maximum Wind Speed (mph)']), axis=1)
+    df['avg_wind_speed'] = df.apply(lambda x: conv_mph_to_mps(x['Average Wind Speed (mph)']), axis=1)
+
+    df['min_rel_hum'] = df.apply(lambda x: float(x['Minimum Relative Humidity (%)']), axis=1)
+    df['max_rel_hum'] = df.apply(lambda x: float(x['Maximum Relative Humidity (%)']), axis=1)
+    df['avg_rel_hum'] = df.apply(lambda x: float(x['Average Relative Humidity (%)']), axis=1)
+
+    df['sol_rad'] = df.apply(lambda x: float(conv_avgWattsRad_to_DailyKJmSquared(x['Average Solar Radiation (W/m2)'])),
+                             axis=1)
+
+    # set the index to the datetime.
+    df = df.set_index('dt')
+
+    return df
+
+def florida_separate(metpath, output_loc):
+    """"""
+
+    doc_dict = {}
+    with open(metpath, 'r') as rfile:
+        for i, line in enumerate(rfile):
+            print(line)
+            if i == 0:
+                col_line = line.strip('\n')
+            else:
+                # print(line)
+                ln = line.strip('\n')
+                ln_lst = ln.split(',')
+                stid = ln_lst[0]
+
+                # print('id: ', stid)
+                doc_dict[stid] = []
+
+    with open(metpath, 'r') as rfile:
+        for i, line in enumerate(rfile):
+            # for i, line in zip(range(10), rfile):
+            if i != 0:
+                ln = line.strip('\n')
+                ln_lst = ln.split(',')
+                stid = ln_lst[0]
+
+                # print('id append:', stid)
+                doc_dict[stid].append(line)
+
+    # print('doc dict, \n', doc_dict)
+    # print('cols:', col_line)
+
+    outfilenames = []
+    for k, v in doc_dict.items():
+        with open(os.path.join(output_loc, f'{k}.csv'), 'w') as wfile:
+            outfilenames.append(f'{k}.csv')
+            wfile.write(col_line)
+            for line in v:
+                wfile.write(line)
+
 
 if __name__ == "__main__":
 
@@ -601,10 +744,65 @@ if __name__ == "__main__":
 #     okmesonet_separate(metpath=mesonet_path, output_loc=mnet_path)
 
 
-    # === Illinois ===
+    # # === Illinois ===
+    # root = r'Z:\Users\Gabe\refET\Illinois_CN\allstations_archived'
+    # for f in os.listdir(root):
+    #     metpath = os.path.join(root, f)
+    #     illinois_CN_reformat(metpath, output_loc=r'Z:\Users\Gabe\refET\Illinois_CN\reformatted')
 
-    root = r'Z:\Users\Gabe\refET\Illinois_CN\allstations_archived'
 
-    for f in os.listdir(root):
-        metpath = os.path.join(root, f)
-        illinois_CN_reformat(metpath, output_loc=r'Z:\Users\Gabe\refET\Illinois_CN\reformatted')
+    # # === Cackalack Del Norte ===
+    # # NOTE - Average Solar radiation in (W/(m^2)) not total radiation in KJ Needs to be converted
+    # root = r'Z:\Users\Gabe\refET\NC_EcoNet\NC_EcoNet_Data'
+    # for f in os.listdir(root):
+    #     if f.endswith('.txt'):
+    #         metpath = os.path.join(root, f)
+    #         nc_econet_reformat(metpath, output_loc=r'Z:\Users\Gabe\refET\NC_EcoNet\NC_Econet_Reformat')
+
+    # # === Delaware extract ===
+    # root = r'Z:\Users\Gabe\refET\Delaware'
+    # file = r'data_gabriel.csv'
+    # outloc = r'delaware_siteData_reformat'
+    #
+    # p = os.path.join(root, file)
+    # op = os.path.join(root, outloc)
+    #
+    # delaware_separate(p, op)
+
+    # === Florida FAWN extraction ===
+
+    # PHASE 1
+
+    # ### ==== Phase I FLORIDA =====
+    # fla_out = r'C:\Users\gparrish\Desktop\mfile_out'
+    # fla_in = r'Z:\Users\Gabe\refET\FAWN\FAWN_raw'
+    #
+    # columns = None
+    # megafile = []
+    #
+    # for path, dir, fil in os.walk(fla_in):
+    #     print(path)
+    #     print(fil)
+    #
+    #     for f in fil:
+    #         if f.endswith('.csv'):
+    #             fpath = os.path.join(path, f)
+    #             with open(fpath, 'r') as rfile:
+    #                 for i, line in enumerate(rfile):
+    #                     if i == 0:
+    #                         columns = line
+    #                     else:
+    #                         megafile.append(line)
+    # outpath = os.path.join(fla_out, 'megafile.csv')
+    #
+    # with open(outpath, 'w') as wfile:
+    #     wfile.write(columns)
+    #     for line in megafile:
+    #         wfile.write(line)
+
+    # ===== PHASE II ======
+
+    mpath = r'C:\Users\gparrish\Desktop\mfile_out\megafile.csv'
+    outp = r'C:\Users\gparrish\Desktop\mfile_out\\florida_csvs'
+
+    florida_separate(mpath, outp)

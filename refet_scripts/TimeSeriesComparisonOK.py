@@ -115,6 +115,14 @@ for gmp, mp, okn in zip(gridmet_paths, azmet_paths, names_in_common):
 
     m_df = calc_daily_ETo_uniformat(m_df, meters_abv_sealevel=meters_abv_sl, lonlat=lonlat, smoothing=False)
 
+    gm['EToGM'] = gm['ETo']
+    m_df['ETo_Station'] = m_df['ETo']
+    m_df_daily = m_df.resample('1D').sum()
+    gm_daily = gm.resample('1D').sum()
+    daily_merge = pd.concat([m_df_daily, gm_daily], axis=1)
+    daily_output = r'Z:\Users\Gabe\refET\OK_daily'
+    daily_merge.to_csv(os.path.join(daily_output, '{}.csv'.format(okn)))
+
     # 1) Aggregate to Monthly
     m_df_monthly = m_df.resample('1M').sum()
     gm_monthly = gm.resample('1M').sum()

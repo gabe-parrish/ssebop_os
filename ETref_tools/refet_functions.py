@@ -60,6 +60,13 @@ def conv_mph_to_mps(mph):
     mps = float(mph) * 0.44704
     return mps
 
+def conv_avgWattsRad_to_DailyKJmSquared(wattspermetersquared):
+    """"""
+    # Watts = Joule/sec  * seconds in a day and divided by 1000000 to convert to megajoules
+    KJmSquared = (wattspermetersquared * 86400) / 1000000
+
+    return KJmSquared
+
 def conv_f_to_m(foot_lenght):
     """
     Convert feet to meters
@@ -225,6 +232,7 @@ def calc_e_actual(rh_max=None, rh_min=None, e_tmax=None, e_tmin=None, rhmax_only
     # this is the default unless data is suspect or missing
     else:
         # print('calculating e actual as the default')
+        print(e_tmin, type(e_tmin), rh_max, type(rh_max), e_tmax, type(e_tmax), rh_min, type(rh_min))
         e_actual = ((e_tmin*(rh_max/100)) + (e_tmax*(rh_min/100))) / 2
     # moreover, if humidity data overall is very unreliable you can assume that e_actual = e_tmin
     return e_actual
@@ -292,7 +300,7 @@ def calc_Rns(Rs, a=0.23):
     :param a: albedo set to 0.23 dimensionless for grass ETo reference
     :return:
     """
-
+    print(a, type(a), Rs, type(Rs))
     Rns = (1 - a) * Rs
     return Rns
 
