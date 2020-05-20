@@ -20,14 +20,10 @@ from dateutil import relativedelta
 from datetime import date, datetime
 import pandas as pd
 
-# ============= standard library imports ========================
-from utils.os_utils import windows_path_fix
-from ETref_tools.dataframe_calc_daily_ETr import metdata_df_uniformat, calc_daily_ETo_uniformat
-
 # for the local machine
 os.environ['GDAL_DATA'] = r'C:\Users\gparrish\AppData\Local\conda\conda\envs\gdal_env\Library\share\gdal'
-
 """This script stores functions related to reading and writing raster data using GDAL"""
+
 def val_extract(point_path, field='id', other_field='Elevation'):
 
     """For extracting other characteristics from a shapefile and saving to a dict. To be used in conjunction with x_y extract"""
@@ -127,7 +123,6 @@ def x_y_extract(point_path, field='id'):
 
     return feature_dict
 
-
 def raster_extract(raster_path, x, y, arc=True):
     """
     uses x and y from x_y_extract function to grab the value at the cordinates from the raster given in raster_path
@@ -189,7 +184,6 @@ def raster_extract(raster_path, x, y, arc=True):
     # datasource_obj.Destroy()
 
     return value
-
 
 def gridmet_extract_point(root, shape_root, shape_name, start, end, output_root, field='id',
                           elevation_field='Elevation', elevation_meters=True):
@@ -261,7 +255,6 @@ def gridmet_extract_point(root, shape_root, shape_name, start, end, output_root,
             for v, d in zip(vals, dates):
                 wfile.write('{},{},{},{},{}\n'.format(v, d, x, y, elev))
 
-
 def convert_raster_to_array(input_raster_path, raster=None, band=1):
     """
     Convert .tif raster into a numpy numerical array.
@@ -288,8 +281,6 @@ def convert_raster_to_array(input_raster_path, raster=None, band=1):
     raster_open = gdal.Open(p)
     ras = raster_open.GetRasterBand(band).ReadAsArray()
     return ras
-
-
 
 def gridmet_eto_reader(gridmet_eto_loc, smoothing=False):
     """
@@ -324,8 +315,6 @@ def gridmet_eto_reader(gridmet_eto_loc, smoothing=False):
     # test
     print(gm_df)
     return gm_df
-
-
 
 # def gridmet_extract_points(root, shape_root, shape_name, start, end, output_root, field='id'):
 #     """
