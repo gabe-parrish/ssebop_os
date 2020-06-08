@@ -32,6 +32,9 @@ azmet_root = r'Z:\Users\Gabe\refET\AZMet_Stations\scraped_raw\daily_raw_equivale
 
 yearly_output = r'Z:\Users\Gabe\refET\AZMET_GRIDMET_yearly_compare'
 monthly_output = r'Z:\Users\Gabe\refET\AZMET_GRIDMET_monthly_compare'
+daily_output = r'Z:\Users\Gabe\refET\AZMET_GRIDMET_daily_compare'
+if not os.path.exists(daily_output):
+    os.mkdir(daily_output)
 
 fig_output = r'Z:\Users\Gabe\refET\az_figs'
 
@@ -117,8 +120,19 @@ for gmp, mp, azn in zip(gridmet_paths, azmet_paths, names_in_common):
 
     m_df = calc_daily_ETo_uniformat(m_df, meters_abv_sealevel=meters_abv_sl, lonlat=lonlat, smoothing=False)
 
+
     # add the old ETo from AZmet into the new mdf dataset.
     m_df = pd.concat([m_df_complete_yrs['ETo_AZ'], m_df_complete_yrs['ETo_PM'], m_df], axis=1)
+
+
+    # === make daily outputs to be sure that  the values are good.
+    # Change the heading of the ETo for gridmet and for DRI
+    gm['EToGM'] = gm['ETo']
+    m_df['ETo_Station'] = m_df['ETo']
+    m_df_daily = m_df.resample('1D').sum()
+    gm_daily = gm.resample('1D').sum()
+    daily_merge = pd.concat([m_df_daily, gm_daily], axis=1)
+    daily_merge.to_csv(os.path.join(daily_output, '{}.csv'.format(azn)))
 
     # 1) Aggregate to Monthly
     m_df_monthly = m_df.resample('1M').sum()

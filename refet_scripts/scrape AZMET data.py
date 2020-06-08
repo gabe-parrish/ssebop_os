@@ -13,12 +13,6 @@
 # limitations under the License.
 # ===============================================================================
 import os
-from selenium import webdriver
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
-import urllib.request
-
 from bs4 import BeautifulSoup, Comment
 from datetime import datetime
 import requests

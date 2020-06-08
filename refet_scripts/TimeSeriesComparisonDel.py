@@ -32,6 +32,7 @@ mesonet_root = r'Z:\Users\Gabe\refET\Delaware\delaware_siteData_reformat'
 
 yearly_output = r'Z:\Users\Gabe\refET\Delaware\Del_GRIDMET_yearly_compare'
 monthly_output = r'Z:\Users\Gabe\refET\Delaware\Del_GRIDMET_monthly_compare'
+daily_output = r'Z:\Users\Gabe\refET\Delaware\Del_GRIDMET_daily_compare'
 
 fig_output = r'Z:\Users\Gabe\refET\Delaware\Del_figs'
 
@@ -128,15 +129,16 @@ for gmp, mp, mn in zip(gridmet_paths, mesonet_paths, names_in_common):
 
     m_df = calc_daily_ETo_uniformat(m_df, meters_abv_sealevel=meters_abv_sl, lonlat=lonlat, smoothing=False)
 
-    # # === make daily outputs to be sure that  the values are good.
-    # # Change the heading of the ETo for gridmet and for DRI
-    # gm['EToGM'] = gm['ETo']
-    # m_df['ETo_Station'] = m_df['ETo']
-    # m_df_daily = m_df.resample('1D').sum()
-    # gm_daily = gm.resample('1D').sum()
-    # daily_merge = pd.concat([m_df_daily, gm_daily], axis=1)
-    # daily_output = r'Z:\Users\Gabe\refET\Delaware\Del_GRIDMET_daily_compare'
-    # daily_merge.to_csv(os.path.join(daily_output, '{}.csv'.format(mn)))
+
+
+    # === make daily outputs to be sure that  the values are good.
+    # Change the heading of the ETo for gridmet and for DRI
+    gm['EToGM'] = gm['ETo']
+    m_df['ETo_Station'] = m_df['ETo']
+    m_df_daily = m_df.resample('1D').sum()
+    gm_daily = gm.resample('1D').sum()
+    daily_merge = pd.concat([m_df_daily, gm_daily], axis=1)
+    daily_merge.to_csv(os.path.join(daily_output, '{}.csv'.format(mn)))
 
     # 1) Aggregate to Monthly
     m_df_monthly = m_df.resample('1M').sum()

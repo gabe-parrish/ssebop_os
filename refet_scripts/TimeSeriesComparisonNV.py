@@ -31,7 +31,14 @@ DRI_agrimet_root = r'Z:\Users\Gabe\refET\DRI_Agrimet_Metfiles\data_even_years'
 
 shape = r'Z:\Users\Gabe\refET\refET_geo_files\DRI_agrimet_sites.shp'
 yearly_output = r'Z:\Users\Gabe\refET\DRI_Grid_yearly_compare'
+if not os.path.exists(yearly_output):
+    os.mkdir(yearly_output)
 monthly_output = r'Z:\Users\Gabe\refET\DRI_Grid_monthly_compare'
+if not os.path.exists(monthly_output):
+    os.mkdir(monthly_output)
+daily_output = r'Z:\Users\Gabe\refET\DRI_Grid_daily_compare'
+if not os.path.exists(daily_output):
+    os.mkdir(daily_output)
 
 fig_output = r'Z:\Users\Gabe\refET\nevada_figs'
 
@@ -100,6 +107,15 @@ for mp, gmp, cn in zip(metpaths, gridmet_path, common_names):
     # add the DRI ETos back on there for use later
     m_df = pd.concat([m_orig_df['ET_total_ASCE'], m_orig_df['ET_Penman_total'], m_df], axis=1)
 
+    # === make daily outputs to be sure that  the values are good.
+    # Change the heading of the ETo for gridmet and for DRI
+    gm['EToGM'] = gm['ETo']
+    m_df['ETo_Station'] = m_df['ETo']
+    m_df_daily = m_df.resample('1D').sum()
+    gm_daily = gm.resample('1D').sum()
+    daily_merge = pd.concat([m_df_daily, gm_daily], axis=1)
+    daily_merge.to_csv(os.path.join(daily_output, '{}.csv'.format(cn)))
+
     # plt.plot(m_df.index, m_df.ETo)
     # plt.show()
 
@@ -139,104 +155,104 @@ for mp, gmp, cn in zip(metpaths, gridmet_path, common_names):
     print('ou8tputiing yearly {}{}.csv'.format(yearly_output, cn))
     yearly_merge.to_csv(os.path.join(yearly_output, '{}.csv'.format(cn)))
 
-    # ============== The Plotting portion of the TIME SERIES COMPARISON ===================
-    # 3) Apply Smoothing
-    m_df_smoothed = m_df.rolling('10D').mean()
-    gm_smoothed = gm.rolling('10D').mean()
-    # === dates ===
-    m_smooth = m_df_smoothed.index
-    gm_smooth = gm_smoothed.index
-    # === values ===
-    m_vals_smooth = m_df_smoothed['ETo']
-    gm_vals_smooth = gm_smoothed['ETo']
-
-
-    # 4) Plot Monthly, Yearly, Smoothing
-    fig, ax = plt.subplots(4, 1, sharex=True)
-
-    ax[0].plot(m_month, m_vals_month, color='green', label='Agrimet ETo (mm)')
-    ax[0].scatter(m_month, m_vals_month, color='green', facecolor='none')
-    ax[0].plot(gm_month, gm_vals_month, color='black', label='GRIDMET ETo (mm)')
-    ax[0].scatter(gm_month, gm_vals_month, color='black', facecolor='none')
-    ax[0].set(xlabel='Date', ylabel='mm of ETo',
-              title='{} Monthly Nevada Reference Vs Gridmet'.format(cn))
-    ax[0].legend()
-
-    ax[1].plot(m_year, m_vals_year, color='green', label='Agrimet ETo (mm)')
-    ax[1].scatter(m_year, m_vals_year, color='green', facecolor='none')
-    ax[1].plot(gm_year, gm_vals_year, color='black', label='GRIDMET ETo (mm)')
-    ax[1].scatter(gm_year, gm_vals_year, color='black', facecolor='none')
-    ax[1].set(xlabel='Date', ylabel='mm of ETo',
-              title='{} Yearly Nevada Reference Vs Gridmet'.format(cn))
-    ax[1].legend()
-
-    ax[2].plot(m_smooth, m_vals_smooth, color='green', label='Agrimet ETo (mm)')
-    ax[2].scatter(m_smooth, m_vals_smooth, color='green', facecolor='none')
-    ax[2].plot(gm_smooth, gm_vals_smooth, color='black', label='GRIDMET ETo (mm)')
-    ax[2].scatter(gm_smooth, gm_vals_smooth, color='black', facecolor='none')
-    ax[2].set(xlabel='Date', ylabel='mm of ETo',
-              title='{} Smoothed Daily Nevada Reference Vs Gridmet'.format(cn))
-    ax[2].legend()
-
-
-    ax[3].plot(m_df.index, m_df.ETo, color='green', label='{} ETo not smooth'.format(cn))
-    ax[3].plot(gm.index, gm.ETo, color='black', label='Gridmet ETo (mm)')
-    ax[3].set(xlabel='Date', ylabel='mm ETo', title='{} UN-Smoothed Daily Nevada Reference Vs Gridmet'.format(cn))
-    ax[3].legend()
-
-    ax[0].grid()
-    ax[1].grid()
-    ax[2].grid()
-    ax[3].grid()
+    # # ============== The Plotting portion of the TIME SERIES COMPARISON ===================
+    # # 3) Apply Smoothing
+    # m_df_smoothed = m_df.rolling('10D').mean()
+    # gm_smoothed = gm.rolling('10D').mean()
+    # # === dates ===
+    # m_smooth = m_df_smoothed.index
+    # gm_smooth = gm_smoothed.index
+    # # === values ===
+    # m_vals_smooth = m_df_smoothed['ETo']
+    # gm_vals_smooth = gm_smoothed['ETo']
+    #
+    #
+    # # 4) Plot Monthly, Yearly, Smoothing
+    # fig, ax = plt.subplots(4, 1, sharex=True)
+    #
+    # ax[0].plot(m_month, m_vals_month, color='green', label='Agrimet ETo (mm)')
+    # ax[0].scatter(m_month, m_vals_month, color='green', facecolor='none')
+    # ax[0].plot(gm_month, gm_vals_month, color='black', label='GRIDMET ETo (mm)')
+    # ax[0].scatter(gm_month, gm_vals_month, color='black', facecolor='none')
+    # ax[0].set(xlabel='Date', ylabel='mm of ETo',
+    #           title='{} Monthly Nevada Reference Vs Gridmet'.format(cn))
+    # ax[0].legend()
+    #
+    # ax[1].plot(m_year, m_vals_year, color='green', label='Agrimet ETo (mm)')
+    # ax[1].scatter(m_year, m_vals_year, color='green', facecolor='none')
+    # ax[1].plot(gm_year, gm_vals_year, color='black', label='GRIDMET ETo (mm)')
+    # ax[1].scatter(gm_year, gm_vals_year, color='black', facecolor='none')
+    # ax[1].set(xlabel='Date', ylabel='mm of ETo',
+    #           title='{} Yearly Nevada Reference Vs Gridmet'.format(cn))
+    # ax[1].legend()
+    #
+    # ax[2].plot(m_smooth, m_vals_smooth, color='green', label='Agrimet ETo (mm)')
+    # ax[2].scatter(m_smooth, m_vals_smooth, color='green', facecolor='none')
+    # ax[2].plot(gm_smooth, gm_vals_smooth, color='black', label='GRIDMET ETo (mm)')
+    # ax[2].scatter(gm_smooth, gm_vals_smooth, color='black', facecolor='none')
+    # ax[2].set(xlabel='Date', ylabel='mm of ETo',
+    #           title='{} Smoothed Daily Nevada Reference Vs Gridmet'.format(cn))
+    # ax[2].legend()
+    #
+    #
+    # ax[3].plot(m_df.index, m_df.ETo, color='green', label='{} ETo not smooth'.format(cn))
+    # ax[3].plot(gm.index, gm.ETo, color='black', label='Gridmet ETo (mm)')
+    # ax[3].set(xlabel='Date', ylabel='mm ETo', title='{} UN-Smoothed Daily Nevada Reference Vs Gridmet'.format(cn))
+    # ax[3].legend()
+    #
+    # ax[0].grid()
+    # ax[1].grid()
+    # ax[2].grid()
     # ax[3].grid()
-
-    # plt.ylim((0, 16))
-    plt.tight_layout()
-    plt.legend()
+    # # ax[3].grid()
+    #
+    # # plt.ylim((0, 16))
+    # plt.tight_layout()
+    # plt.legend()
+    # # plt.show()
+    #
+    # # 5) plot monthly and yearly percent differences
+    #
+    # pdiff_month = (abs(m_vals_month - gm_vals_month) / gm_vals_month) * 100
+    # pdiff_year = (abs(m_vals_year - gm_vals_year)/ gm_vals_year) * 100
+    #
+    # fig2, ax2 = plt.subplots(4, 1, sharex=True)
+    #
+    # ax2[0].plot(m_month, m_vals_month, color='green', label='Agrimet ETo (mm)')
+    # ax2[0].scatter(m_month, m_vals_month, color='green', facecolor='none')
+    # ax2[0].plot(gm_month, gm_vals_month, color='black', label='GRIDMET ETo (mm)')
+    # ax2[0].scatter(gm_month, gm_vals_month, color='black', facecolor='none')
+    # ax2[0].set(xlabel='Date', ylabel='mm of ETo',
+    #           title='{} Monthly Nevada Reference Vs Gridmet'.format(cn))
+    # ax2[0].legend()
+    #
+    # ax2[1].plot(pdiff_month.index, pdiff_month, color='blue', label='pdiff %')
+    # ax2[1].scatter(pdiff_month.index, pdiff_month, color='blue', facecolor='none')
+    # ax2[1].set(xlabel='Date', ylabel='percent difference',
+    #           title='{} Monthly Nevada Reference Vs Gridmet'.format(cn))
+    # ax2[1].legend()
+    #
+    # ax2[2].plot(m_year, m_vals_year, color='green', label='Agrimet ETo (mm)')
+    # ax2[2].scatter(m_year, m_vals_year, color='green', facecolor='none')
+    # ax2[2].plot(gm_year, gm_vals_year, color='black', label='GRIDMET ETo (mm)')
+    # ax2[2].scatter(gm_year, gm_vals_year, color='black', facecolor='none')
+    # ax2[2].set(xlabel='Date', ylabel='mm of ETo',
+    #           title='{} Yearly Nevada Reference Vs Gridmet'.format(cn))
+    # ax2[2].legend()
+    #
+    # ax2[3].plot(pdiff_year.index, pdiff_year, color='blue', label='pdiff %')
+    # ax2[3].scatter(pdiff_year.index, pdiff_year, color='blue', facecolor='none')
+    # ax2[3].set(xlabel='Date', ylabel='percent difference',
+    #           title='{} Yearly Nevada Reference Vs Gridmet'.format(cn))
+    # ax2[3].legend()
+    #
+    # ax2[0].grid()
+    # ax2[1].grid()
+    # ax2[2].grid()
+    # ax2[3].grid()
+    # # ax[3].grid()
+    #
+    # # plt.ylim((0, 16))
+    # plt.tight_layout()
+    # plt.legend()
     # plt.show()
-
-    # 5) plot monthly and yearly percent differences
-
-    pdiff_month = (abs(m_vals_month - gm_vals_month) / gm_vals_month) * 100
-    pdiff_year = (abs(m_vals_year - gm_vals_year)/ gm_vals_year) * 100
-
-    fig2, ax2 = plt.subplots(4, 1, sharex=True)
-
-    ax2[0].plot(m_month, m_vals_month, color='green', label='Agrimet ETo (mm)')
-    ax2[0].scatter(m_month, m_vals_month, color='green', facecolor='none')
-    ax2[0].plot(gm_month, gm_vals_month, color='black', label='GRIDMET ETo (mm)')
-    ax2[0].scatter(gm_month, gm_vals_month, color='black', facecolor='none')
-    ax2[0].set(xlabel='Date', ylabel='mm of ETo',
-              title='{} Monthly Nevada Reference Vs Gridmet'.format(cn))
-    ax2[0].legend()
-
-    ax2[1].plot(pdiff_month.index, pdiff_month, color='blue', label='pdiff %')
-    ax2[1].scatter(pdiff_month.index, pdiff_month, color='blue', facecolor='none')
-    ax2[1].set(xlabel='Date', ylabel='percent difference',
-              title='{} Monthly Nevada Reference Vs Gridmet'.format(cn))
-    ax2[1].legend()
-
-    ax2[2].plot(m_year, m_vals_year, color='green', label='Agrimet ETo (mm)')
-    ax2[2].scatter(m_year, m_vals_year, color='green', facecolor='none')
-    ax2[2].plot(gm_year, gm_vals_year, color='black', label='GRIDMET ETo (mm)')
-    ax2[2].scatter(gm_year, gm_vals_year, color='black', facecolor='none')
-    ax2[2].set(xlabel='Date', ylabel='mm of ETo',
-              title='{} Yearly Nevada Reference Vs Gridmet'.format(cn))
-    ax2[2].legend()
-
-    ax2[3].plot(pdiff_year.index, pdiff_year, color='blue', label='pdiff %')
-    ax2[3].scatter(pdiff_year.index, pdiff_year, color='blue', facecolor='none')
-    ax2[3].set(xlabel='Date', ylabel='percent difference',
-              title='{} Yearly Nevada Reference Vs Gridmet'.format(cn))
-    ax2[3].legend()
-
-    ax2[0].grid()
-    ax2[1].grid()
-    ax2[2].grid()
-    ax2[3].grid()
-    # ax[3].grid()
-
-    # plt.ylim((0, 16))
-    plt.tight_layout()
-    plt.legend()
-    plt.show()

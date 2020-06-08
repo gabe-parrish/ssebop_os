@@ -33,6 +33,9 @@ okmesonet_root = r'Z:\Users\Gabe\refET\OK_Mesonet'
 
 yearly_output = r'Z:\Users\Gabe\refET\OKMESONET_GRIDMET_yearly_compare'
 monthly_output = r'Z:\Users\Gabe\refET\OKMESONET_GRIDMET_monthly_compare'
+daily_output = r'Z:\Users\Gabe\refET\OKMESONET_GRIDMET_daily_compare'
+if not os.path.exists(daily_output):
+    os.mkdir(daily_output)
 
 fig_output = r'Z:\Users\Gabe\refET\ok_figs'
 
@@ -115,12 +118,13 @@ for gmp, mp, okn in zip(gridmet_paths, azmet_paths, names_in_common):
 
     m_df = calc_daily_ETo_uniformat(m_df, meters_abv_sealevel=meters_abv_sl, lonlat=lonlat, smoothing=False)
 
+    # === make daily outputs to be sure that  the values are good.
+    # Change the heading of the ETo for gridmet and for DRI
     gm['EToGM'] = gm['ETo']
     m_df['ETo_Station'] = m_df['ETo']
     m_df_daily = m_df.resample('1D').sum()
     gm_daily = gm.resample('1D').sum()
     daily_merge = pd.concat([m_df_daily, gm_daily], axis=1)
-    daily_output = r'Z:\Users\Gabe\refET\OK_daily'
     daily_merge.to_csv(os.path.join(daily_output, '{}.csv'.format(okn)))
 
     # 1) Aggregate to Monthly
