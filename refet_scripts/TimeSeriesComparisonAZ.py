@@ -27,12 +27,12 @@ from ETref_tools.metdata_preprocessor import azmet_preprocess
  monthly and yearly ETo"""
 
 
-gridmet_root = r'Z:\Users\Gabe\refET\AZMET_GridMet'
-azmet_root = r'Z:\Users\Gabe\refET\AZMet_Stations\scraped_raw\daily_raw_equivalent_filenames'
+gridmet_root = r'Z:\Users\Gabe\refET\AZMET\AZMET_GridMet'
+azmet_root = r'Z:\Users\Gabe\refET\AZMET\AZMet_Stations\scraped_raw\daily_raw_equivalent_filenames'
 
-yearly_output = r'Z:\Users\Gabe\refET\AZMET_GRIDMET_yearly_compare'
-monthly_output = r'Z:\Users\Gabe\refET\AZMET_GRIDMET_monthly_compare'
-daily_output = r'Z:\Users\Gabe\refET\AZMET_GRIDMET_daily_compare'
+yearly_output = r'Z:\Users\Gabe\refET\AZMET\AZMET_GRIDMET_yearly_compare'
+monthly_output = r'Z:\Users\Gabe\refET\AZMET\AZMET_GRIDMET_monthly_compare'
+daily_output = r'Z:\Users\Gabe\refET\AZMET\AZMET_GRIDMET_daily_compare'
 if not os.path.exists(daily_output):
     os.mkdir(daily_output)
 
