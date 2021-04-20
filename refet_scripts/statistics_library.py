@@ -31,7 +31,6 @@ def kge_ed(r, alpha, beta):
     ed = math.sqrt(pytho)
     return ed
 
-
 def alpha(sigma_m, sigma_o):
     """
     ...
@@ -62,35 +61,36 @@ def pearson_r(y_o, y_m, n):
     :param n: len of each iterable
     :return: float
     """
+    # TODO - fix this function. Pearson's r is much too SMALL
+
     # DO a check to make sure that n is the same as len() of the other two params
     if not len(y_m)==n and len(y_o) == n:
         print('pearson_r() observed (y_o) and modeled (y_m) iterables must\n'
               'be the same length and match param n')
         sys.exit(0)
 
-    # [y_o * y_m, ....]
+    # getting the 'ingredients' for the pearson statistic.
+    # https://www.statisticshowto.com/probability-and-statistics/correlation-coefficient-formula/
     modeled_prod = [i_o * i_m for i_o, i_m in zip(y_o, y_m)]
-    a = sum(modeled_prod)
-    # todo - is it really a product of the two sums? (blankenau Thesis)
+    observed_square = [i_o ** 2 for i_o in y_o]
+    modeled_square = [i_m ** 2 for i_m in y_m]
+    # get the sums
+    sum_modeled_prod = sum(modeled_prod)
+    sum_obs_square = sum(observed_square)
+    sum_modeled_square = sum(modeled_square)
     model_sum = sum(y_m)
     obs_sum = sum(y_o)
 
     # getting the means
-    b = (obs_sum * model_sum)/n
     # numerator of the pearson coeff
-    num = a - b
-
-    # observed std dev
-    c = (obs_sum ** 2) - ((obs_sum ** 2)/n)
-    # modeled standard dev
-    d = (model_sum ** 2) - ((model_sum ** 2)/n)
+    num = (n * (sum_modeled_prod)) - (obs_sum * model_sum)
     # denominator of the pearson coeff
-    denom = math.sqrt(c * d)
+    denom = math.sqrt(((n * sum_obs_square)-(obs_sum ** 2))*((n * sum_modeled_square) - (model_sum ** 2)))
 
     return num/denom
 
 
-def mbe(y_o, y_m, n):
+def mbe_stat(y_o, y_m, n):
     """
     Mean Bias Error
     :param y_o: iterable
@@ -108,7 +108,7 @@ def mbe(y_o, y_m, n):
     return (1/n) * sum(diff_lst)
 
 
-def sde(y_o, y_m, n, mbe):
+def sde_stat(y_o, y_m, n, mbe):
     """
     Standard Deviation of Error
     :param y_o: iterable
@@ -140,11 +140,71 @@ def data_mean(y):
 
 def std_dev(y):
     """"""
+    print('inside std dev')
     n = len(y)
+    print('y', y)
+    print('sum', sum(y))
     mn = sum(y) / n
+    print('n', n)
+    print('mn', mn)
     # for each number, subtract the mean and square the result
     square_dif = [(i-mn)**2 for i in y]
     # take the mean of the squared differences
     mn_square = sum(square_dif) / n
     # take the square root and thats the std dev!
     return math.sqrt(mn_square)
+
+
+def calc_kge(y_o, y_m):
+    """"""
+    # print('indside kge')
+    n = len(y_o)
+    # print('n', n)
+    # print(len(y_o), len(y_m))
+
+    if not n == len(y_m):
+        print(f'observed and measuerd iterables must be the same length. '
+              f'You gave y_o of len {n} and y_m of {len(y_m)}')
+        sys.exit()
+
+
+    so = std_dev(y_o)
+    sm = std_dev(y_m)
+    # print(so, sm)
+    mean_o = sum(y_o)/n
+    mean_m = sum(y_m)/n
+    # print(mean_o)
+    # print(mean_m)
+    a = alpha(sigma_m=sm, sigma_o=so)
+    b = beta(mu_m=mean_m, mu_o=mean_o)
+    r = pearson_r(y_o=y_o, y_m=y_m, n=n)
+    ed = kge_ed(r=r, alpha=a, beta=b)
+    # print(a, b, r, ed)
+
+    return (kling_gupta_efficiency(ed), a, b, r)
+
+
+def calc_mbe(y_o, y_m):
+    """"""
+    n = len(y_o)
+
+    if not n == len(y_m):
+        print(f'observed and measuerd iterables must be the same length. '
+              f'You gave y_o of len {n} and y_m of {len(y_m)}')
+        sys.exit()
+
+    return mbe_stat(y_o=y_o, y_m=y_m, n=n)
+
+def calc_sde(y_o, y_m):
+    """"""
+    n = len(y_o)
+
+    if not n == len(y_m):
+        print(f'observed and measuerd iterables must be the same length. '
+              f'You gave y_o of len {n} and y_m of {len(y_m)}')
+        sys.exit()
+
+    mbe = mbe_stat(y_o=y_o, y_m=y_m, n=n)
+
+    return sde_stat(y_o=y_o, y_m=y_m, n=n, mbe=mbe)
+

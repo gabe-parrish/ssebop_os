@@ -111,8 +111,6 @@ for t, a, n in zip(terra, aqua, names):
 
 print('terra keys \n', terra_keys)
 print('aqua keys \n', aqua_keys)
-# print('terra dict \n', terra_dict)
-# print('aqua dict \n', aqua_dict)
 
 for tkey, akey in zip(terra_keys, aqua_keys):
 

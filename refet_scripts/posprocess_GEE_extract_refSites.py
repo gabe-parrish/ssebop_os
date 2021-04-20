@@ -13,13 +13,16 @@
 # limitations under the License.
 # ===============================================================================
 import os
+import math
 import numpy as np
 from numpy.polynomial.polynomial import polyfit
 import pandas as pd
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+import yaml
 from matplotlib import pyplot as plt
 from matplotlib.dates import date2num
+from refet_scripts.statistics_library import calc_kge, calc_mbe, calc_sde
 # import seaborn as sns
 # ============= standard library imports ========================
 
@@ -74,7 +77,6 @@ def yearly_data_extract(metpath, var='Ppt'):
 
     return dt_list, var_series, daily_ts, daily_station_eto, daily_gm_eto
 
-
 def get_yearly_climatol(monthly_clim_path):
     """"""
 
@@ -84,7 +86,7 @@ def get_yearly_climatol(monthly_clim_path):
 
     return annual_ppt_mm
 
-def extract_reference_times(ndvi_vals, ndvi_dates, daily_station_ts, daily_station_eto, daily_gm_eto):
+def smooth_and_interpolate_ndvi(ndvi_vals, ndvi_dates, daily_station_ts, daily_station_eto, daily_gm_eto):
 
     # assemble the station data into a dataframe
     station_df = pd.DataFrame({'daily_station_ts': daily_station_ts,
@@ -100,18 +102,17 @@ def extract_reference_times(ndvi_vals, ndvi_dates, daily_station_ts, daily_stati
 
     big_green = pd.merge(daily_modis, station_df, how='outer', left_index=True, right_index=True)
 
-    print('El Gran Verde\n', big_green.head())
+    # print('El Gran Verde\n', big_green.head())
     return big_green
-
 
 # precipital climatol comes in here
 metdata_root = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_dec1_2020\united_sites\true_reference_metdata'
 metclims = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_dec1_2020\united_sites\true_reference_metclims'
-NDVI_thresh = 0.7
+NDVI_high_thresh = 0.7
+NDVI_low_thresh = 0.35
 # combined_root = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_dec1_2020\united_sites\trueRef_MODIS_NDVI_test\combined'
 combined_root = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_MarchMay_2021\merged_ndvi_timeseries'
 
-# plot_output = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_dec1_2020\united_sites\plot_out'
 plot_output = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_dec1_2020\united_sites\plot_out_II'
 
 snames = ['YumaSouthAZ', 'PalomaAZ', 'HarquahalaAZ', 'DeKalbIL', 'BondvilleIL', 'MonmouthIL', 'AntelopeValleyNV', 'CloverValleyNV', 'SnakeValleyNV']
@@ -119,18 +120,19 @@ ns_names = ['AZ1', 'AZ2', 'AZ3', 'IL1', 'IL2', 'IL3', 'NV1', 'NV2', 'NV3']
 modis_files_list = [os.path.join(combined_root, f'{i}_modis_ndvi.csv') for i in ns_names]
 
 ddict = {}
+stat_dict = {}
 for modis_f, sn in zip(modis_files_list, snames):
-    print(modis_f)
+    # print(modis_f)
     data_dictionary = {}
 
     avg_annual_precip = get_yearly_climatol(os.path.join(metclims, f'{sn}.csv'))
-    print(f'average precip for {sn} is {avg_annual_precip}')
+    # print(f'average precip for {sn} is {avg_annual_precip}')
 
     # get annual aggregated timeseries and annual aggregated precip,
     # also daily timeseries, daily eto and daily gridmet eto
     ts, yearly_precip, daily_ts, daily_station_eto, daily_gm_eto = yearly_data_extract(metpath=os.path.join(metdata_root, f'{sn}.csv'), var='Ppt')
-    print('daily_ts', daily_ts)
-    print('daily gm', daily_gm_eto)
+    # print('daily_ts', daily_ts)
+    # print('daily gm', daily_gm_eto)
     data_dictionary[f'{sn}_daily_ts'] = daily_ts
     data_dictionary[f'{sn}_daily_gmeto'] = daily_gm_eto
     data_dictionary[f'{sn}_daily_eto'] = daily_station_eto
@@ -139,13 +141,21 @@ for modis_f, sn in zip(modis_files_list, snames):
 
     # calculating drought years as calendar years where precipitation is less than or equal to 20% of the annual mean
     drought_brackets = []
+    # get the anti drought brackets
+    non_drought_brackets = []
     percent_from_avg = [((j-avg_annual_precip)/(avg_annual_precip))*100 for j in yearly_precip]
     for t, p in zip(ts, percent_from_avg):
         if p <= -20.0:
             # if it's a drought put it in timebrackets
             drought_brackets.append((t, (t + relativedelta(years=+1) - relativedelta(days=+1))))
+        else:
+            # if p is not a drought condition, then append the year to a non-drought list
+            non_drought_brackets.append((t, (t + relativedelta(years=+1) - relativedelta(days=+1))))
     # add the drought dates to the data dictionary
     data_dictionary['{}_droughts'.format(sn)] = drought_brackets
+
+    print('droughts \n', drought_brackets)
+    print('non droughts \n', non_drought_brackets)
 
     with open(modis_f, 'r') as rfile:
         vals = []
@@ -172,67 +182,189 @@ for modis_f, sn in zip(modis_files_list, snames):
         data_dictionary['{}_dates'.format(sn)] = dates
 
         # when is the area of interest green enough to be considered reference?
-        green_df = extract_reference_times(vals, dates, daily_ts, daily_station_eto, daily_gm_eto)
+        smoothed_ts_df = smooth_and_interpolate_ndvi(vals, dates, daily_ts, daily_station_eto, daily_gm_eto)
 
-        # plot daily eto where ndvi is greater than 0.6
-        green_df['veg_ref'] = (green_df['smooth_ndvi']>=NDVI_thresh)
+        # Pull out data from drought and non_drought periods.
+        # useful stack for this https://stackoverflow.com/questions/29441243/pandas-time-series-multiple-slice
+        drought_df = pd.DataFrame()
+        for start_time, end_time in drought_brackets:
+            selection = smoothed_ts_df[(smoothed_ts_df.index >= start_time) & (smoothed_ts_df.index <= end_time)]
+            print('drought_selector \n', selection)
+            drought_df = drought_df.append(selection)
+        non_drought_df = pd.DataFrame()
+        for start_time, end_time in non_drought_brackets:
+            selection = smoothed_ts_df[(smoothed_ts_df.index >= start_time) & (smoothed_ts_df.index <= end_time)]
+            print('non_drought_selector \n', selection)
+            non_drought_df = non_drought_df.append(selection)
 
-        x = green_df[green_df['veg_ref']]['daily_station_eto']
-        y = green_df[green_df['veg_ref']]['daily_gm_eto']
+        # print(f'drought_df {sn} \n', drought_df['smooth_ndvi'].head())
+        # print(f'non_drought_df {sn}\n', non_drought_df['smooth_ndvi'].head())
+
+        # plot drought eto where ndvi is greater or less than the threshold
+        drought_df['drought_high_ndvi'] = (drought_df['smooth_ndvi'] >= NDVI_high_thresh)
+        drought_df['drought_low_ndvi'] = (drought_df['smooth_ndvi'] <= NDVI_low_thresh)
+
+        # plot daily eto where ndvi is greater/less than a threshold
+        smoothed_ts_df['veg_ref'] = (smoothed_ts_df['smooth_ndvi'] >= NDVI_high_thresh)
+        smoothed_ts_df['veg_nonref'] = (smoothed_ts_df['smooth_ndvi'] <= NDVI_low_thresh)
+
+        # ================================================================================
+        # ================================================================================
+        # ================================================================================
+
+        x_green = smoothed_ts_df[smoothed_ts_df['veg_ref']]['daily_station_eto']
+        y_green = smoothed_ts_df[smoothed_ts_df['veg_ref']]['daily_gm_eto']
+        x_brown = smoothed_ts_df[smoothed_ts_df['veg_nonref']]['daily_station_eto']
+        y_brown = smoothed_ts_df[smoothed_ts_df['veg_nonref']]['daily_gm_eto']
+        # === drought sensitivity ===
+        x_green_drought = drought_df[drought_df['drought_high_ndvi']]['daily_station_eto']
+        y_green_drought = drought_df[drought_df['drought_high_ndvi']]['daily_gm_eto']
+        x_brown_drought = drought_df[drought_df['drought_low_ndvi']]['daily_station_eto']
+        y_brown_drought = drought_df[drought_df['drought_low_ndvi']]['daily_gm_eto']
+        x_all_drought = drought_df['daily_station_eto']
+        y_all_drought = drought_df['daily_gm_eto']
+        # Non Drought Sensitivity ======
+        x_non_drought = non_drought_df['daily_station_eto']
+        y_non_drought = non_drought_df['daily_gm_eto']
+
+        # process x and y datasets to calculate bias statistics
+        xg_list = x_green.to_list()
+        yg_list = y_green.to_list()
+        xb_list = x_brown.to_list()
+        yb_list = y_brown.to_list()
+        # == drought ==
+        xgd_list = x_green_drought.to_list()
+        ygd_list = y_green_drought.to_list()
+        xbd_list = x_brown_drought.to_list()
+        ybd_list = y_brown_drought.to_list()
+        xd_list = x_all_drought.to_list()
+        yd_list = y_all_drought.to_list()
+        # === Non drought ===
+        xnd_list = x_non_drought.to_list()
+        ynd_list = y_non_drought.to_list()
+
+        def do_stats(xlst, ylst, text):
+            x_data = []
+            y_data = []
+            for l, m in zip(xlst, ylst):
+                # if either l or m is nan, drop both
+                if not math.isnan(l) and not math.isnan(m):
+                    x_data.append(l)
+                    y_data.append(m)
+            # for x and y, calculate the Kling-Gupta Efficiency, Mean Bias Error (MBE) and Standard Dev of Error (SDE)
+            if not len(x_data) == 0:
+                kge, alpha, beta, pearson_r = calc_kge(y_o=x_data, y_m=y_data)
+                mbe = calc_mbe(y_o=x_data, y_m=y_data)
+                sde = calc_sde(y_o=x_data, y_m=y_data)
+                print(f'Site, {sn}, kge {kge}, alpha {alpha}, beta {beta}, pearson r {pearson_r}, mbe {mbe}, sde {sde}')
+                site_dict = {'site': sn, 'kge': kge, 'alpha': alpha, 'beta': beta,
+                             'pearson_r': pearson_r, 'mbe': mbe, 'sde': sde, 'nx': len(x_data), 'ny': len(y_data)}
+                stat_dict[f'{sn}_{text}'] = site_dict
+
+        # # === for High NDVI (greater than 0.7) ===
+        do_stats(xlst=xg_list, ylst=yg_list, text='highNDVI')
+
+        # # === for LOW NDVI ===
+        do_stats(xlst=xb_list, ylst=yb_list, text='lowNDVI')
+
+        # === for drought
+        do_stats(xlst=xgd_list, ylst=ygd_list, text='highNDVIdrought')
+        do_stats(xlst=xbd_list, ylst=ybd_list, text='lowNDVIdrought')
+        do_stats(xlst=xd_list, ylst=yd_list, text='drought')
+        # === for non-drought
+        do_stats(xlst=xnd_list, ylst=ynd_list, text='NONdrought')
 
 
+    try:
+        txt_high_ndvi = f"MBE: {round(stat_dict[f'{sn}_highNDVI']['mbe'], 4)} KGE: {round(stat_dict[f'{sn}_highNDVI']['kge'], 4)}"
+        txt_low_ndvi = f"MBE: {round(stat_dict[f'{sn}_lowNDVI']['mbe'], 4)} KGE: {round(stat_dict[f'{sn}_lowNDVI']['kge'], 4)}"
+        txt_drought = f"MBE: {round(stat_dict[f'{sn}_drought']['mbe'], 4)} KGE: {round(stat_dict[f'{sn}_drought']['kge'], 4)}"
+        txt_non_drought = f"MBE: {round(stat_dict[f'{sn}_NONdrought']['mbe'], 4)} KGE: {round(stat_dict[f'{sn}_NONdrought']['kge'], 4)}"
+    except:
+        txt_high_ndvi = ''
+        txt_low_ndvi = ''
+        txt_drought = ''
+        txt_non_drought = ''
 
-        fig, ax = plt.subplots()
-        ax.scatter(green_df[green_df['veg_ref']]['daily_station_eto'], green_df[green_df['veg_ref']]['daily_gm_eto'], edgecolor='blue', facecolor='none', label='ETo (mm)')
-        ax.plot(green_df[green_df['veg_ref']]['daily_station_eto'], green_df[green_df['veg_ref']]['daily_station_eto'], color='black', label='line of agreement')
+    # === plot drought timeseries ===
+    fig, ax = plt.subplots()
+    ax.plot(dates, vals, color='green', label='Terra/Aqua MODIS NDVI')
+    ax.scatter(dates, vals, marker='s', edgecolor='green', facecolor='none')
+    # highlight the drought periods
+    for drought in drought_brackets:
+        ax.axvspan(date2num(drought[0]), date2num(drought[1]), color='red', alpha=0.3)
+    ax.grid(True)
+    ax.legend(loc='lower right')
+    ax.set_title(f'MODIS NDVI Timeseries and Drought Years - {sn}')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('NDVI')
+    plt.savefig(os.path.join(plot_output, f'NDVI_drought_timeseries_{sn}.PNG'))
 
-        # # plot the line of best fit
-        # b, m = polyfit(x, y, 1)
-        # ax.plot(x, b+m *x, color='green', label=f'y = {m}x + {b}')
-        ax.grid(True)
-        ax.legend(loc='lower right')
-        ax.set_title(f'{sn} - Comparing ETo on days where NDVI >= {NDVI_thresh}')
-        ax.set_xlabel('Daily Station ETo (mm) ')
-        ax.set_ylabel('Daily GRIDMET ETo (mm)')
-        plt.savefig(os.path.join(plot_output, f'highNDVI_comparison_{sn}.png'))
-        # plt.show()
+    # ..... HIGH NDVI occurences.....
+    fig, ax = plt.subplots()
+    ax.scatter(smoothed_ts_df[smoothed_ts_df['veg_ref']]['daily_station_eto'],
+               smoothed_ts_df[smoothed_ts_df['veg_ref']]['daily_gm_eto'], edgecolor='blue', facecolor='none', label='ETo (mm)')
+    ax.plot(smoothed_ts_df[smoothed_ts_df['veg_ref']]['daily_station_eto'],
+            smoothed_ts_df[smoothed_ts_df['veg_ref']]['daily_station_eto'], color='black', label='line of agreement')
+    ax.grid(True)
+    ax.legend(loc='lower right')
+    ax.set_title(f'{sn} - Comparing ETo on days where NDVI >= {NDVI_high_thresh} \n {txt_high_ndvi}')
+    ax.set_xlabel('Daily Station ETo (mm) ')
+    ax.set_ylabel('Daily GRIDMET ETo (mm)')
+    plt.savefig(os.path.join(plot_output, f'highNDVI_comparison_{sn}.png'))
+    # plt.show()
 
-        # plot the other shit
-        fig, ax = plt.subplots()
-        ax.plot(dates, vals, color='green', label='Terra/Aqua MODIS NDVI')
-        ax.scatter(dates, vals, marker='s', edgecolor='green', facecolor='none')
-        # highlight the drought periods
-        for drought in drought_brackets:
-            ax.axvspan(date2num(drought[0]), date2num(drought[1]), color='red', alpha=0.3)
-        ax.grid(True)
-        ax.legend(loc='lower right')
-        ax.set_title(f'MODIS NDVI Timeseries and Drought Years - {sn}')
-        ax.set_xlabel('Date')
-        ax.set_ylabel('NDVI')
-        plt.savefig(os.path.join(plot_output, f'NDVI_drought_timeseries_{sn}.PNG'))
-        # plt.show()
+    # ..... Low NDVI occurences.....
+    fig, ax = plt.subplots()
+    ax.scatter(smoothed_ts_df[smoothed_ts_df['veg_nonref']]['daily_station_eto'],
+               smoothed_ts_df[smoothed_ts_df['veg_nonref']]['daily_gm_eto'],
+               edgecolor='blue', facecolor='none', label='ETo (mm)')
+    ax.plot(smoothed_ts_df[smoothed_ts_df['veg_nonref']]['daily_station_eto'],
+            smoothed_ts_df[smoothed_ts_df['veg_nonref']]['daily_station_eto'],
+            color='black', label='line of agreement')
 
-    ddict[sn] = data_dictionary
+    ax.grid(True)
+    ax.legend(loc='lower right')
+    ax.set_title(f'{sn} - Comparing ETo on days where NDVI <= {NDVI_low_thresh}\n {txt_low_ndvi}')
+    ax.set_xlabel('Daily Station ETo (mm) ')
+    ax.set_ylabel('Daily GRIDMET ETo (mm)')
+    plt.savefig(os.path.join(plot_output, f'lowNDVI_comparison_{sn}.png'))
+    # plt.show()
 
-# # print('the data dictionary\n', ddict)
-#
-# for n in snames:
-#     sv_dates = ddict[f'{n}'][f'{n}_dates']
-#     sv_ndvi = ddict[f'{n}'][f'{n}_values']
-#     sv_droughts = ddict[f'{n}'][f'{n}_droughts']
-#
-#     fig, ax = plt.subplots()
-#
-#     ax.plot(sv_dates, sv_ndvi, color='green', label='Terra/Aqua MODIS NDVI')
-#     ax.scatter(sv_dates, sv_ndvi, marker='s', edgecolor='green', facecolor='none')
-#
-#     # highlight the drought periods
-#     for drought in sv_droughts:
-#         ax.axvspan(date2num(drought[0]), date2num(drought[1]), color='red', alpha=0.3)
-#
-#     ax.grid(True)
-#     ax.legend(loc='lower right')
-#     ax.set_title(f'MODIS NDVI for {n}')
-#     ax.set_xlabel('Date')
-#     ax.set_ylabel('NDVI')
-#     plt.show()
+    # ===Drought===
+    fig, ax = plt.subplots()
+    ax.scatter(drought_df['daily_station_eto'],
+               drought_df['daily_gm_eto'],
+               edgecolor='blue', facecolor='none', label='ETo (mm)')
+    # the one-to-one line
+    ax.plot(drought_df['daily_station_eto'],
+            drought_df['daily_station_eto'],
+            color='black', label='line of agreement')
+    ax.grid(True)
+    ax.legend(loc='lower right')
+    ax.set_title(f'{sn} - - Comparing daily ETo during drought periods. \n {txt_drought}')
+    ax.set_xlabel('Daily Station ETo (mm)')
+    ax.set_ylabel('Daily GRIDMET ETo (mm)')
+    plt.savefig(os.path.join(plot_output, f'drought_comparison_{sn}.png'))
+    # plt.show()
+
+    # ===NonDrought===
+    fig, ax = plt.subplots()
+    ax.scatter(non_drought_df['daily_station_eto'],
+               non_drought_df['daily_gm_eto'],
+               edgecolor='blue', facecolor='none', label='ETo (mm)')
+    # the one-to-one line
+    ax.plot(non_drought_df['daily_station_eto'],
+            non_drought_df['daily_station_eto'],
+            color='black', label='line of agreement')
+    ax.grid(True)
+    ax.legend(loc='lower right')
+    ax.set_title(f'{sn} - Comparing daily ETo during normal periods.\n {txt_non_drought}')
+    ax.set_xlabel('Daily Station ETo (mm)')
+    ax.set_ylabel('Daily GRIDMET ETo (mm)')
+    plt.savefig(os.path.join(plot_output, f'nondrought_comparison_{sn}.png'))
+    # plt.show()
+
+# dump stats as a yml file
+with open(os.path.join(plot_output, 'et_ref_stats.yml'), 'w') as wfile:
+    yaml.dump(stat_dict, wfile)
