@@ -119,68 +119,43 @@ def main():
     # run drought
     usdm_drought.drought_times()
 
+
+def generate_drought_files():
+
+    # the site 'name' in the shapefile attribute.
+    snames = ['YumaSouthAZ', 'PalomaAZ', 'HarquahalaAZ', 'DeKalbIL', 'BondvilleIL', 'MonmouthIL', 'AntelopeValleyNV',
+              'CloverValleyNV', 'SnakeValleyNV']
+    # TODO - loop through the features in the study site locations, and extract the coordinates, then using the
+    #  Drought_USDM class, make csv files all throghout.
+    study_site_locations = r'Z:/Users/Gabe/refET/deliverable_june18/analysis_dec1_2020/united_sites/true_reference_PRISMind.shp'
+    output_locations = r''
+
+    # open the shapefile with Fiona, or geopandas.
+    gdf = geopd.read_file(study_site_locations)
+
+    print(gdf.head(15))
+    names = gdf['name'].to_list()
+    geometries = gdf['geometry'].to_list()
+
+    print('names \n', names, '\ngeometries\n', geometries)
+
+    root_dir = r'Z:\Users\Gabe\refET\Drought'
+    fmt = 'USDM_YYYYmmdd.shp'
+    output_location = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_dec1_2020\united_sites\USDM_Drought_timeseries'
+    # looping through the snames
+    for sn, geom in zip(names, geometries):
+
+        if os.path.exists(os.path.join(output_location, f'drought_timeline_{sn}.csv')):
+            print('path exists, passing...')
+            pass
+        else:
+            print(sn)
+            print(geom.x)
+            print(geom.y)
+            drought_obj = Drought_USDM(coords=(geom.x, geom.y),  root_dir=root_dir, fmt=fmt, output_dir=output_location,
+                                    station_name=sn)
+            drought_obj.drought_times()
+
 if __name__ == '__main__':
-    main()
-
-
-#
-# shape=None
-# coords = Point(-110.529, 35.755)
-# # shape = r'Z:\Users\Gabe\refET\refET_geo_files\clover_valley_NV.shp'
-# root_dir = r'Z:\Users\Gabe\refET\Drought'
-# fmt = 'USDM_YYYYmmdd.shp'
-#
-# if shape is None:
-#     point_location = coords
-#
-# else:
-#     point_location_df = geopd.read_file(shape)
-#     print('df \n', point_location_df)
-#     print('point location\n', point_location_df.columns)
-#     # set the index of point location to the 'id' so you can reference it.
-#     # point_location_df.set_index('id', inplace=True)
-#     # print('df post \n', point_location_df)
-#     # point_location = point_location_df.iloc[0]
-#
-#     print('df post \n', point_location_df)
-#     # How it works ==> geodataframe.loc[index, 'column_name']
-#     point_location = point_location_df.loc[0, 'geometry']
-#     print('location', type(point_location))
-#
-# dates = []
-# drought_type = []  # 'D3' or 'D4'
-# for f in os.listdir(root_dir):
-#     if f.endswith('.shp'):
-#         fpath = os.path.join(root_dir, f)
-#         # get the datetime
-#         if fmt == 'USDM_YYYYmmdd.shp':
-#             fname = f.split('.')[0]
-#             dt_str = fname.split('_')[1]
-#             dt = datetime.strptime(dt_str, '%Y%m%d')
-#             dates.append(dt)
-#         else:
-#             print(f'{fmt} not yet implemented')
-#             sys.exit()
-#
-#         print(f'date, {dt.year}-{dt.month}-{dt.day}')
-#         # geopandas open file, read as geodataframe
-#         gdf = geopd.read_file(fpath)
-#         # make sure the dataframe is indexed by the Drought Monitor score of 0-4
-#         gdf.set_index('DM', inplace=True)
-#         print('geodataframe \n', gdf.columns)
-#         print('drought intersection \n', gdf['geometry'].contains(point_location))
-#         try:
-#             drought_bool = gdf['geometry'].contains(point_location)
-#             # print('index stuff', drought_bool[drought_bool].index.values[0])
-#             dm_value = drought_bool[drought_bool].index.values[0]
-#         except:
-#             print('No drought designation, exception thrown')
-#             dm_value = 'normal'
-#
-#         drought_type.append(dm_value)
-#
-# output_place = r'C:\Users\gparrish\Documents'
-# with open(os.path.join(output_place, 'drought_timeline_test.csv'), 'w') as wfile:
-#     wfile.write('Date,Drought\n')
-#     for d, dtype in zip(dates, drought_type):
-#         wfile.write('{}{:02d}{:02d},{}\n'.format(d.year, d.month, d.day, dtype))
+    # main()
+    generate_drought_files()

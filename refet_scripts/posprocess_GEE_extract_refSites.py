@@ -25,6 +25,7 @@ from matplotlib.dates import date2num
 from refet_scripts.statistics_library import calc_kge, calc_mbe, calc_sde
 # import seaborn as sns
 # ============= standard library imports ========================
+from refet_scripts.drought_USDM_timeseries import Drought_USDM
 
 """
 Pulling out NDVI values extracted by GEE surrounding weather stations, 
@@ -86,6 +87,10 @@ def get_yearly_climatol(monthly_clim_path):
 
     return annual_ppt_mm
 
+def get_USDM_drought_from_file(dpath):
+    """"""
+    # todo
+    pass
 def smooth_and_interpolate_ndvi(ndvi_vals, ndvi_dates, daily_station_ts, daily_station_eto, daily_gm_eto):
 
     # assemble the station data into a dataframe
@@ -105,44 +110,48 @@ def smooth_and_interpolate_ndvi(ndvi_vals, ndvi_dates, daily_station_ts, daily_s
     # print('El Gran Verde\n', big_green.head())
     return big_green
 
-# precipital climatol comes in here
+# meteorological data for selected sites.
 metdata_root = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_dec1_2020\united_sites\true_reference_metdata'
+# precipitation climatology comes in here
 metclims = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_dec1_2020\united_sites\true_reference_metclims'
+# high and low threshold for NDVI work.
 NDVI_high_thresh = 0.7
 NDVI_low_thresh = 0.35
-# combined_root = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_dec1_2020\united_sites\trueRef_MODIS_NDVI_test\combined'
+# Location for the NDVI timeseries
 combined_root = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_MarchMay_2021\merged_ndvi_timeseries'
-
+# where the plots go
 plot_output = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_dec1_2020\united_sites\plot_out_II'
 
+# two lists associating the correct site with correct filenames
 snames = ['YumaSouthAZ', 'PalomaAZ', 'HarquahalaAZ', 'DeKalbIL', 'BondvilleIL', 'MonmouthIL', 'AntelopeValleyNV', 'CloverValleyNV', 'SnakeValleyNV']
 ns_names = ['AZ1', 'AZ2', 'AZ3', 'IL1', 'IL2', 'IL3', 'NV1', 'NV2', 'NV3']
 modis_files_list = [os.path.join(combined_root, f'{i}_modis_ndvi.csv') for i in ns_names]
 
+# data dictionary (a dictionary of data_dictonaries)
 ddict = {}
+# statistics dictionary
 stat_dict = {}
+# looping through two sets of files
 for modis_f, sn in zip(modis_files_list, snames):
-    # print(modis_f)
+    # The dictionary holding the data for a given site.
     data_dictionary = {}
 
+    # getting a precipitation climatology.
     avg_annual_precip = get_yearly_climatol(os.path.join(metclims, f'{sn}.csv'))
-    # print(f'average precip for {sn} is {avg_annual_precip}')
 
     # get annual aggregated timeseries and annual aggregated precip,
     # also daily timeseries, daily eto and daily gridmet eto
     ts, yearly_precip, daily_ts, daily_station_eto, daily_gm_eto = yearly_data_extract(metpath=os.path.join(metdata_root, f'{sn}.csv'), var='Ppt')
-    # print('daily_ts', daily_ts)
-    # print('daily gm', daily_gm_eto)
+    # adding NDVI, Gridmet ETo and Station ETo timeseries to a dictionary.
     data_dictionary[f'{sn}_daily_ts'] = daily_ts
     data_dictionary[f'{sn}_daily_gmeto'] = daily_gm_eto
     data_dictionary[f'{sn}_daily_eto'] = daily_station_eto
 
-
-
     # calculating drought years as calendar years where precipitation is less than or equal to 20% of the annual mean
     drought_brackets = []
-    # get the anti drought brackets
+    # get the non-drought periods too.
     non_drought_brackets = []
+    # TODO - for the analysis, make a function that returns a drought bracket and non drought bracket list(s) for a given site.
     percent_from_avg = [((j-avg_annual_precip)/(avg_annual_precip))*100 for j in yearly_precip]
     for t, p in zip(ts, percent_from_avg):
         if p <= -20.0:
