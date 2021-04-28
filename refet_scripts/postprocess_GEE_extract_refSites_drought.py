@@ -133,8 +133,11 @@ def get_USDM_drought_from_file(dpath, thresh=3):
     drought_tup_lst = [(ddates[ii[0]], ddates[ii[-1]]) for ii in drought_indices]
     non_drought_tup_lst = [(ddates[ii[0]], ddates[ii[-1]]) for ii in non_drought_indices]
 
-    # print(f'drought tups \n {drought_tup_lst} \n non drought tups \n {non_drought_tup_lst}')
+    print(f'drought tups \n {drought_tup_lst} \n non drought tups \n {non_drought_tup_lst}')
     return drought_tup_lst, non_drought_tup_lst
+
+
+
 
 def smooth_and_interpolate_ndvi(ndvi_vals, ndvi_dates, daily_station_ts, daily_station_eto, daily_gm_eto):
 
@@ -156,11 +159,12 @@ def smooth_and_interpolate_ndvi(ndvi_vals, ndvi_dates, daily_station_ts, daily_s
     return big_green
 
 
+
 # #============== get_USDM_drought_from_file ====================
 # print('testing USDM extractor')
 drought_path = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_dec1_2020\united_sites\USDM_Drought_timeseries'
 # value at which we consider the drought to be large enough to warrant comparison
-USDM_drought_threshhold = 3
+USDM_drought_threshhold = 1
 # meteorological data for selected sites.
 metdata_root = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_dec1_2020\united_sites\true_reference_metdata'
 # precipitation climatology comes in here
@@ -219,14 +223,9 @@ for modis_f, sn in zip(modis_files_list, snames):
     # print('non droughts \n', non_drought_brackets)
 
     # USDM droughts
-    USDM_drought_brackets, USDM_nonDrought_brackets = get_USDM_drought_from_file(dpath=os.path.join(drought_path, f'drought_timeline_{sn}.csv'), thresh=USDM_drought_threshhold)
-    # print('droughts \n', USDM_drought_brackets)
-    # print('non droughts \n', USDM_nonDrought_brackets)
-
-    if len(USDM_drought_brackets) == 0:
-        print(f'{sn} has 0 droughts')
-    if len(USDM_nonDrought_brackets) == 0:
-        print(f'{sn} has 0 non Drought periods... Really?')
+    USDM_drought_brackets, USDM_nonDrought_brackets = get_USDM_drought_from_file(dpath=os.path.join(drought_path, f'drought_timeline_{sn}.csv'))
+    print('droughts \n', USDM_drought_brackets)
+    print('non droughts \n', USDM_nonDrought_brackets)
     # # if there's no brackets, forget it and move on:
     # if len(USDM_drought_brackets)==0 or len(USDM_nonDrought_brackets) == 0:
     #     continue
@@ -290,32 +289,27 @@ for modis_f, sn in zip(modis_files_list, snames):
 
         # ================================================================================
         # ================================================================================
-        # comparing and contrasting modeled and observed datasets based on NDVI, local/regional(USDM) droughts
         # ================================================================================
-        # ================================================================================
+
         x_green = smoothed_ts_df[smoothed_ts_df['veg_ref']]['daily_station_eto']
         y_green = smoothed_ts_df[smoothed_ts_df['veg_ref']]['daily_gm_eto']
         x_brown = smoothed_ts_df[smoothed_ts_df['veg_nonref']]['daily_station_eto']
         y_brown = smoothed_ts_df[smoothed_ts_df['veg_nonref']]['daily_gm_eto']
         # === drought sensitivity ===
-        # high NDVI droughts
         x_green_drought = drought_df[drought_df['drought_high_ndvi']]['daily_station_eto']
         y_green_drought = drought_df[drought_df['drought_high_ndvi']]['daily_gm_eto']
-        # low NDVI droughts
         x_brown_drought = drought_df[drought_df['drought_low_ndvi']]['daily_station_eto']
         y_brown_drought = drought_df[drought_df['drought_low_ndvi']]['daily_gm_eto']
-        # ==== LOCAL drought =========
         x_all_drought = drought_df['daily_station_eto']
         y_all_drought = drought_df['daily_gm_eto']
-        # Local Non Drought Sensitivity ======
+        # Non Drought Sensitivity ======
         x_non_drought = non_drought_df['daily_station_eto']
         y_non_drought = non_drought_df['daily_gm_eto']
-        # TODO ------------
         ## ALL drought level 3 and Above from USDM
         if len(USDM_drought_brackets) > 0:
             x_usdm_drought = USDM_drought_df['daily_station_eto']
             y_usdm_drought = USDM_drought_df['daily_gm_eto']
-        if len(USDM_nonDrought_brackets) > 0:
+        elif len(USDM_nonDrought_brackets) > 0:
             x_usdm_nonDrought = USDM_nonDrought_df['daily_station_eto']
             y_usdm_nonDrought = USDM_nonDrought_df['daily_gm_eto']
         else:
@@ -340,7 +334,7 @@ for modis_f, sn in zip(modis_files_list, snames):
         if len(USDM_drought_brackets) > 0:
             x_usdm_d_list = x_usdm_drought.to_list()
             y_usdm_d_list = y_usdm_drought.to_list()
-        if len(USDM_nonDrought_brackets) > 0:
+        elif len(USDM_nonDrought_brackets) > 0:
             x_usdm_non_list = x_usdm_nonDrought.to_list()
             y_usdm_non_list = y_usdm_nonDrought.to_list()
         else:
@@ -378,7 +372,7 @@ for modis_f, sn in zip(modis_files_list, snames):
         # ======= For ALL station drought ======
         if len(USDM_drought_brackets) > 0:
             do_stats(xlst=x_usdm_d_list, ylst=y_usdm_d_list, text='USDMDrought')
-        if len(USDM_nonDrought_brackets) > 0:
+        elif len(USDM_nonDrought_brackets) > 0:
             do_stats(xlst=x_usdm_non_list, ylst=y_usdm_non_list, text='USDMnonDrought')
         else:
             pass
@@ -400,11 +394,11 @@ for modis_f, sn in zip(modis_files_list, snames):
     except:
         txt_non_drought = ''
     try:
-        txt_USDM_drought = f"MBE: {round(stat_dict[f'{sn}_USDMDrought']['mbe'], 4)} KGE: {round(stat_dict[f'{sn}_USDMDrought']['kge'], 4)}"
+        txt_USDM_drought = f"MBE: {round(stat_dict[f'{sn}_drought']['mbe'], 4)} KGE: {round(stat_dict[f'{sn}_USDMDrought']['kge'], 4)}"
     except:
         txt_USDM_drought = ''
     try:
-        txt_USDM_nondrought = f"MBE: {round(stat_dict[f'{sn}_USDMnonDrought']['mbe'], 4)} KGE: {round(stat_dict[f'{sn}_USDMnonDrought']['kge'], 4)}"
+        txt_USDM_nondrought = f"MBE: {round(stat_dict[f'{sn}_drought']['mbe'], 4)} KGE: {round(stat_dict[f'{sn}_USDMnonDrought']['kge'], 4)}"
     except:
         txt_USDM_nondrought = ''
 
@@ -502,7 +496,7 @@ for modis_f, sn in zip(modis_files_list, snames):
         ax.set_title(f'{sn} - ETo during USDM level {USDM_drought_threshhold}+ Drought.\n {txt_USDM_drought}')
         ax.set_xlabel('Daily Station ETo (mm)')
         ax.set_ylabel('Daily GRIDMET ETo (mm)')
-        plt.savefig(os.path.join(plot_output, f'USDM_drought_comparison_{sn}_USDMlvl{USDM_drought_threshhold}.png'))
+        plt.savefig(os.path.join(plot_output, f'USDM_drought_comparison_{sn}.png'))
         # plt.show()
     else:
         pass
@@ -519,20 +513,12 @@ for modis_f, sn in zip(modis_files_list, snames):
         ax.grid(True)
         ax.legend(loc='lower right')
         ax.set_title(
-            f'{sn} - ETo non Drought.\n {txt_USDM_nondrought}')
+            f'{sn} - ETo non Drought.\n {txt_USDM_drought}')
         ax.set_xlabel('Daily Station ETo (mm)')
         ax.set_ylabel('Daily GRIDMET ETo (mm)')
-        plt.savefig(os.path.join(plot_output, f'USDM_non_drought_comparison_{sn}_USDMlvl{USDM_drought_threshhold}.png'))
+        plt.savefig(os.path.join(plot_output, f'USDM_non_drought_comparison_{sn}.png'))
         # plt.show()
 
 # dump stats as a yml file
-with open(os.path.join(plot_output, f'et_ref_stats.yml_USDMlvl{USDM_drought_threshhold}'), 'w') as wfile:
+with open(os.path.join(plot_output, 'et_ref_stats.yml'), 'w') as wfile:
     yaml.dump(stat_dict, wfile)
-
-
-# TODO - vertical scatter plots of the different stats for each site... If I had more sites, box-and whisker would be best...
-# todo - make vertical scatterplots of all sites for each stat - use the yaml
-# todo - make the one-to-one plots have the same scale for easy comparison.
-
-
-
