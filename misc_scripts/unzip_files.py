@@ -14,16 +14,17 @@
 # ===============================================================================
 import os
 import zipfile
+from progressbar import progressbar
 
-root = r'Z:\Users\Gabe\refET\Drought'
+root = r'Z:\Users\Gabe\refET\Drought\full_ts'
+# output = r'Z:\Users\Gabe\refET\Drought\full_ts'
 
-for f in os.listdir(root):
+for f in progressbar(os.listdir(root)):
     path = os.path.join(root, f)
-    if path.endswith('.zip') and f.startswith('USDM_202012'):
+    if path.endswith('.zip'):  # and f.startswith('USDM_202012')
         print(f'extracting {path}')
         with zipfile.ZipFile(path, 'r') as rzip:
             rzip.extractall(root)
-
 
 # with zipfile.ZipFile(path_to_zip_file, 'r') as zip_ref:
 #     zip_ref.extractall(directory_to_extract_to)

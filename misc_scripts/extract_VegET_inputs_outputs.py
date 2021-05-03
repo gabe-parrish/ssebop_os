@@ -18,11 +18,11 @@ from SEEBop_os.raster_utils import *
 
 ppath = r'Z:\Users\Gabe\VegET\PotomacSample.shp'
 sitename = 'DelOcean'
-
-startyear = 2013
-endyear = 2016
-startday = 1
-endday = 365
+#
+# startyear = 2013
+# endyear = 2016
+# startday = 1
+# endday = 365
 
 feat_dict = x_y_extract(point_path=ppath, field='id')
 # print(feat_dict)
@@ -35,7 +35,7 @@ x, y = feat_dict[0]
 # for i in feat_dict.items():
 #     print('i', i)
 
-root = r'Z:\Projects\Cloud_Veg_ET'
+root = r'Z:\Projects\Veg_ET\USA_data'
 
 #'dd': {'folder': r'model_outputs\v1_DRB\dd', 'fmt': None, 'dt_fmt': 'doy'},
 #     'etasw': {'folder': r'model_outputs\v1_DRB\etasw', 'fmt': None, 'dt_fmt': 'doy'},
@@ -52,12 +52,11 @@ root = r'Z:\Projects\Cloud_Veg_ET'
 # 'fmt' goves the format of the .tif file to be extracted
 # 'dt_fmt' gives a format YYYYdoy for daily time series, doy for climatology day-of-year
 folder_dict = {
-    'ndvi': {'folder': r'Data\NA_data_for_cloud\NDVI', 'fmt': '{}.250_m_16_days_NDVI.tif', 'dt_fmt': 'YYYYdoy'},
-    'precip': {'folder': r'Data\NA_data_for_cloud\Precipitation_withHawaiiPuertoRico',
-               'fmt': 'prec_{}.tif', 'dt_fmt': 'YYYYdoy'},
-    'tavg': {'folder': r'Data\NA_data_for_cloud\Temperature\tavg_C_daily', 'fmt': 'tavg_{}.tif', 'dt_fmt': 'doy'},
-    'tmax': {'folder': r'Data\NA_data_for_cloud\Temperature\tmax_C_daily', 'fmt': 'tmax_{}.tif', 'dt_fmt': 'doy'},
-    'tmin': {'folder': r'Data\NA_data_for_cloud\Temperature\tmin_C_daily', 'fmt': 'tmin_{}.tif', 'dt_fmt': 'doy'}
+    'ndvi': {'folder': r'\NDVI_daily\NDVI_filled', 'fmt': '{}.250_m_16_days_NDVI.tif', 'dt_fmt': 'YYYYdoy'},
+    'precip': {'folder': r'precip_gridmet_tiffs', 'fmt': 'prec_{}.tif', 'dt_fmt': 'YYYYdoy'},
+    'tavg': {'folder': r'temperature_gridmet\tavg_gridmet', 'fmt': 'tavg_{}.tif', 'dt_fmt': 'doy'},
+    'tmax': {'folder': r'temperature_gridmet\tmax_gridmet', 'fmt': 'tmax_{}.tif', 'dt_fmt': 'doy'},
+    'tmin': {'folder': r'temperature_gridmet\tmin_gridmet', 'fmt': 'tmin_{}.tif', 'dt_fmt': 'doy'}
 }
 # put the key and comma delimited stuff in the extraction dict. ts for timeseries, clim for climatological.
 ts_extraction_dict = {}
@@ -80,28 +79,32 @@ for k, v in folder_dict.items():
                 print(f)
 
                 if v['dt_fmt'] == 'doy':
-                    print('the dataset is climatological')
+                    # print('the dataset is climatological')
 
                     # split from the ending 'l' and doy is the last three of the first of the list
                     doy = f.split(l)[0][-3:]
-                    print('doy'), doy
+                    # print('doy'), doy
 
                     # get the values of the point
                     raspath = os.path.join(path, f)
                     val = raster_extract(raster_path=raspath, x=x, y=y, arc=False)
-                    line = '{},{}'.format(doy, val)
+                    print('val', val)
+                    line = '{},{},{}'.format(k, doy, val)
                     clim_extraction_lst.append(line)
 
                 elif v['dt_fmt'] == 'YYYYdoy':
-                    print('the dataset is daily time-series')
+                    # print('the dataset is daily time-series')
                     ydoy = f.split(l)[0]#[-7:]
-                    print('ydoy', ydoy)
+                    # print('ydoy', ydoy)
 
                     # get the values of the point
                     raspath = os.path.join(path, f)
                     val = raster_extract(raster_path=raspath, x=x, y=y, arc=False)
-                    line = '{},{}'.format(ydoy, val)
+                    line = '{},{},{}'.format(k, ydoy, val)
                     ts_extraction_lst.append(line)
+
+    print('ts extraction, \n', ts_extraction_lst)
+    print('clim extraction \n', clim_extraction_lst)
 
     # for ndvi, or whatever variable, set the values into the dictionary
     ts_extraction_dict[k] = ts_extraction_lst
@@ -109,29 +112,34 @@ for k, v in folder_dict.items():
 
 
 with open(os.path.join(root, 'climatologies_ext_{}.txt'.format(sitename)), 'w') as wfile:
-    for i, (k, v) in enumerate(clim_extraction_dict.items()):
+    for k, v in clim_extraction_dict.items():
 
-        if i == 0:
-            # write the header
-            wfile.write('-------------\n')
-            wfile.write('var,day,val\n')
-            wfile.write('-------------\n')
-            wfile.write('{},{}\n'.format(k, v[i]))
-        else:
-            wfile.write('{},{}\n'.format(k, v[i]))
+        for i, val in enumerate(v):
+
+            if i == 0:
+                # write the header
+                wfile.write('-------------\n')
+                wfile.write('var,day,val\n')
+                wfile.write('-------------\n')
+                wfile.write('{}\n'.format(val))
+            else:
+                wfile.write('{}\n'.format(val))
 
 
 
 with open(os.path.join(root, 'climatologies_ext_{}.txt'.format(sitename)), 'w') as wfile:
-    for i, (k, v) in enumerate(ts_extraction_dict.items()):
-        if i == 0:
-            # write the header
-            wfile.write('-------------\n')
-            wfile.write('var,day,val\n')
-            wfile.write('-------------\n')
-            wfile.write('{},{}\n'.format(k, v[i]))
-        else:
-            wfile.write('{},{}\n'.format(k, v[i]))
+    for k, v in ts_extraction_dict.items():
+
+        for i, val in enumerate(v):
+
+            if i == 0:
+                # write the header
+                wfile.write('-------------\n')
+                wfile.write('var,day,val\n')
+                wfile.write('-------------\n')
+                wfile.write('{}\n'.format(val))
+            else:
+                wfile.write('{}\n'.format(val))
 
 
 

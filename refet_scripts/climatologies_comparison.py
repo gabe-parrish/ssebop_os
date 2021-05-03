@@ -18,6 +18,7 @@ import numpy as np
 from datetime import datetime
 import seaborn
 from matplotlib import pyplot as plt
+from scipy import stats
 # ============= standard library imports ========================
 
 
@@ -38,13 +39,13 @@ def compare_climatology(ts, clim):
 
 # output_root = r'Z:\Users\Gabe\refET\deliverable_june18\prism_independent_analysis'
 output_root = r'Z:\Users\Gabe\refET\deliverable_june18\PRISM_dependent_analysis'
-climatology_root = r'Z:\Users\Gabe\refET\deliverable_june18\metclims'
-# climatology_root = r'Z:\Users\Gabe\refET\deliverable_june18\metclims_PRISMDependent'
+# climatology_root = r'Z:\Users\Gabe\refET\deliverable_june18\metclims'
+climatology_root = r'Z:\Users\Gabe\refET\deliverable_june18\metclims_PRISMDependent'
+
 metdata_root = r'Z:\Users\Gabe\refET\deliverable_june18\PRISM-dependent_metdata'
 
 
 # TODO - plot the timeseries for each analyzed site
-
 
 # ==== making paths for analysis outputs ====
 precip_output = os.path.join(output_root, 'precip_analysis')
@@ -191,7 +192,7 @@ for f in os.listdir(metdata_root):
         # plt.savefig(os.path.join(plotpath, 'Humidity', f'{fname}MonthlyHumidity.png'))
         # # plt.show()
         # plt.close()
-        
+
         # ===== Solar Analysis ======
         # DAILY ===
         # daily

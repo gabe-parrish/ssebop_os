@@ -17,7 +17,7 @@ import yaml
 import matplotlib.pyplot as plt
 # ============= standard library imports ========================
 
-path = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_dec1_2020\united_sites\plot_out_II\et_ref_stats_USDMlvl3.yml'
+path = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\script-generated_plots\et_ref_stats.yml_USDMlvl3'
 
 with open(path, 'r') as ryaml:
     stat_dict = yaml.load(ryaml)

@@ -124,12 +124,11 @@ def generate_drought_files():
 
     # the site 'name' in the shapefile attribute.
     snames = ['YumaSouthAZ', 'PalomaAZ', 'HarquahalaAZ', 'DeKalbIL', 'BondvilleIL', 'MonmouthIL', 'AntelopeValleyNV',
-              'CloverValleyNV', 'SnakeValleyNV']
-    # TODO - loop through the features in the study site locations, and extract the coordinates, then using the
+              'CloverValleyNV', 'SnakeValleyNV', 'EVAXOK', 'RINGOK', 'LANEOK', 'NEWLNC', 'LAKENC', 'ROCKNC',
+              'ChesterPA', 'BlackbirdDE', 'LaurelDE']
+    # =loop through the features in the study site locations, and extract the coordinates, then using the
     #  Drought_USDM class, make csv files all throghout.
-    study_site_locations = r'Z:/Users/Gabe/refET/deliverable_june18/analysis_dec1_2020/united_sites/true_reference_PRISMind.shp'
-    output_locations = r''
-
+    study_site_locations = r'Z:\Users\Gabe\refET\refET_geo_files\true_reference_selectedCONUS.shp'
     # open the shapefile with Fiona, or geopandas.
     gdf = geopd.read_file(study_site_locations)
 
@@ -139,12 +138,11 @@ def generate_drought_files():
 
     print('names \n', names, '\ngeometries\n', geometries)
 
-    root_dir = r'Z:\Users\Gabe\refET\Drought'
+    root_dir = r'Z:\Users\Gabe\refET\Drought\full_ts'
     fmt = 'USDM_YYYYmmdd.shp'
-    output_location = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_dec1_2020\united_sites\USDM_Drought_timeseries'
+    output_location = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\USDM_Drought_timeseries'
     # looping through the snames
     for sn, geom in zip(names, geometries):
-
         if os.path.exists(os.path.join(output_location, f'drought_timeline_{sn}.csv')):
             print('path exists, passing...')
             pass

@@ -102,7 +102,7 @@ def x_y_extract(point_path, field='id'):
         # you could get a features 'fields' like feature.GetField('id')
         field_value = feature.GetField(field)
 
-        print("field -> {}".format(field_value))
+        # print("field -> {}".format(field_value))
 
         # but we just want the geometry of the feature
         geometry = feature.GetGeometryRef()
@@ -111,7 +111,7 @@ def x_y_extract(point_path, field='id'):
         x = geometry.GetX()
         y = geometry.GetY()
 
-        print("x -> {}, y -> {}".format(x, y))
+        # print("x -> {}, y -> {}".format(x, y))
 
         feature_dict[field_value] = (x, y)
 
@@ -145,24 +145,24 @@ def raster_extract(raster_path, x, y, arc=True):
     rows = datasource_obj.RasterYSize
     cols = datasource_obj.RasterXSize
 
-    print('rows and cols \n', rows, cols)
+    # print('rows and cols \n', rows, cols)
 
     # get georefference info to eventually calculate the offset:
     transform = datasource_obj.GetGeoTransform()
     xOrigin = transform[0]
     yOrigin = transform[3]
-    print('xy origin', xOrigin, yOrigin)
+    # print('xy origin', xOrigin, yOrigin)
     width_of_pixel = transform[1]
     height_of_pixel = transform[5]
 
-    print('widht and height \n', width_of_pixel, height_of_pixel)
+    # print('widht and height \n', width_of_pixel, height_of_pixel)
 
     # read in a band (only one band)
     band = datasource_obj.GetRasterBand(1)
     # ReadAsArray(xoffset, yoffset, xcount, ycount)
     data = band.ReadAsArray(0, 0, cols, rows)
 
-    print('shape:', data.shape)
+    # print('shape:', data.shape)
 
     # get the offsets so you can read the data from the correct position in the array.
     print(x, xOrigin, width_of_pixel)
@@ -170,7 +170,7 @@ def raster_extract(raster_path, x, y, arc=True):
     x_offset = int((x - xOrigin) / width_of_pixel)
     y_offset = int((y - yOrigin) / height_of_pixel)
 
-    print('offset\n',x_offset, y_offset)
+    # print('offset\n',x_offset, y_offset)
 
     # is this a [rows, columns] thing?
     try:
