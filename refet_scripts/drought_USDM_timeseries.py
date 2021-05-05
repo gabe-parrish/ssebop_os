@@ -106,7 +106,7 @@ class Drought_USDM:
                     wfile.write('{}{:02d}{:02d},{}\n'.format(d.year, d.month, d.day, dtype))
 
     def read_drought_csv(self):
-        # todo - make this function able to read a pre-existing drought file :-)
+        # todo - make this function able to read a pre-existing drought file
         pass
 
 def main():
