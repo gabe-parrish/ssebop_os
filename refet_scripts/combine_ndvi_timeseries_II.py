@@ -6,12 +6,11 @@ import pandas as pd
 from datetime import datetime
 import matplotlib.pyplot as plt
 
-root = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_MarchMay_2021\Field_NDVI_Timeseries'
-output_location = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_MarchMay_2021\merged_ndvi_timeseries'
+root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\terra_aqua_ndvi_raw'
+output_location = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\terra_aqua_ndvi_merged'
 terra = []
 aqua = []
 names = []
-
 
 for csv in os.listdir(root):
     # print('csv: ', csv)
@@ -23,20 +22,20 @@ for csv in os.listdir(root):
     elif 'Aqua' in path:
         aqua.append(path)
 
-root = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_MarchMay_2021\Field_NDVI_Timeseries'
-terra = []
-aqua = []
-names = []
-for csv in os.listdir(root):
-    # print('csv: ', csv)
-    path = os.path.join(root, csv)
-    if 'Terra' in path:
-        tupy = ()
-        terra.append(path)
-        nme = csv.split('_')[2]
-        names.append(nme)
-    elif 'Aqua' in path:
-        aqua.append(path)
+# root = r'Z:\Users\Gabe\refET\deliverable_june18\analysis_MarchMay_2021\Field_NDVI_Timeseries'
+# terra = []
+# aqua = []
+# names = []
+# for csv in os.listdir(root):
+#     # print('csv: ', csv)
+#     path = os.path.join(root, csv)
+#     if 'Terra' in path:
+#         tupy = ()
+#         terra.append(path)
+#         nme = csv.split('_')[2]
+#         names.append(nme)
+#     elif 'Aqua' in path:
+#         aqua.append(path)
 
 terra = sorted(terra)
 aqua = sorted(aqua)
@@ -92,7 +91,14 @@ for t, a, n in zip(terra, aqua, names):
                 # strip out unecessary data
                 raw_ndvi = [f.strip('{NDVI=') for f in raw_ndvi]
                 araw_ndvi = [j.strip('}') for j in raw_ndvi]
-                andvi = [float(p) for p in araw_ndvi]
+                # andvi = [float(p) for p in araw_ndvi]
+                andvi = []
+                for p in araw_ndvi:
+                    try:
+                        andvi.append(float(p))
+                    except ValueError:
+                        andvi.append(float('NAN'))
+
 
                 # aqua_dict[f'{n}_aqua_vals'] = ndvi
                 # aqua_keys.append(f'{n}_aqua_vals')
