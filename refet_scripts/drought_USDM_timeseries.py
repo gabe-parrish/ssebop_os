@@ -145,9 +145,10 @@ def generate_drought_files():
     root_dir = r'Z:\Users\Gabe\refET\Drought\full_ts'
     fmt = 'USDM_YYYYmmdd.shp'
     output_location = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\USDM_Drought_timeseries'
+    overwrite = True
     # looping through the snames
     for sn, geom in zip(names, geometries):
-        if os.path.exists(os.path.join(output_location, f'drought_timeline_{sn}.csv')):
+        if os.path.exists(os.path.join(output_location, f'drought_timeline_{sn}.csv') and not overwrite):
             print('path exists, passing...')
             pass
         else:
