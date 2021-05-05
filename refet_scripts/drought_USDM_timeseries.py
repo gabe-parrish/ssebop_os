@@ -96,8 +96,10 @@ class Drought_USDM:
             self.drought_time_series['Drought'] = self.drought_type
         else:
             # output a file to a csv.
-            # todo - https://stackoverflow.com/questions/6618515/sorting-list-based-on-values-from-another-list
             # sort them before writing to file!
+            # used: https://stackoverflow.com/questions/6618515/sorting-list-based-on-values-from-another-list
+            self.drought_type = [x for _, x in sorted(zip(self.dates, self.drought_type))]
+            self.dates = sorted(self.dates)
             with open(os.path.join(self.output_dir, f'drought_timeline_{self.station_name}.csv'), 'w') as wfile:
                 wfile.write('Date,Drought\n')
                 for d, dtype in zip(self.dates, self.drought_type):
