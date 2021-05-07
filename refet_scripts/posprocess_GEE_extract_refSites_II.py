@@ -28,6 +28,14 @@ from refet_scripts.statistics_library import calc_kge, calc_mbe, calc_sde
 # ============= standard library imports ========================
 from refet_scripts.drought_USDM_timeseries import drought_USDM
 
+
+
+# TODO - Check the timeseries carefully. High NDVI periods that are within drought appear not to be showing up.
+#  Chester DE, etc. Re-check your smoothing algorithm. Is there an inherent weakness if the site is not irrigated?
+# todo - Irrigated sites (EVAX) may not have decent fields around them. Animations?!?!
+# todo - make all figure plots the same scale, consider plotting colors on top of each other, drought vs non drought.
+# todo - histograms....
+
 """
 Pulling out NDVI values extracted by GEE surrounding weather stations, 
 then plotting the timeseries.
@@ -397,8 +405,8 @@ for modis_f, sn in zip(modis_files_list, snames):
     ax.set_title(f'MODIS NDVI Timeseries and Drought Years level {USDM_drought_threshhold}+ : {sn}')
     ax.set_xlabel('Date')
     ax.set_ylabel('NDVI')
-    plt.show()
-    plt.savefig(os.path.join(plot_output, f'NDVI_drought_timeseries_{sn}_USDMlvl{USDM_drought_threshhold}.PNG'))
+    # plt.show()
+    plt.savefig(os.path.join(plot_output, f'NDVI_drought_timeseries_{sn}_USDMlvl{USDM_drought_threshhold}.pdf'))
 
     # ..... HIGH NDVI occurences.....
     fig, ax = plt.subplots()
@@ -411,7 +419,7 @@ for modis_f, sn in zip(modis_files_list, snames):
     ax.set_title(f'{sn} - Comparing ETo on days where NDVI >= {NDVI_high_thresh} \n {txt_high_ndvi}')
     ax.set_xlabel('Daily Station ETo (mm) ')
     ax.set_ylabel('Daily GRIDMET ETo (mm)')
-    plt.savefig(os.path.join(plot_output, f'highNDVI_comparison_{sn}.png'))
+    plt.savefig(os.path.join(plot_output, f'highNDVI_comparison_{sn}.pdf'))
     # plt.show()
 
     # ..... Low NDVI occurences.....
@@ -428,7 +436,7 @@ for modis_f, sn in zip(modis_files_list, snames):
     ax.set_title(f'{sn} - Comparing ETo on days where NDVI <= {NDVI_low_thresh}\n {txt_low_ndvi}')
     ax.set_xlabel('Daily Station ETo (mm) ')
     ax.set_ylabel('Daily GRIDMET ETo (mm)')
-    plt.savefig(os.path.join(plot_output, f'lowNDVI_comparison_{sn}.png'))
+    plt.savefig(os.path.join(plot_output, f'lowNDVI_comparison_{sn}.pdf'))
     # plt.show()
 
     if len(USDM_drought_brackets)>0:
@@ -446,7 +454,7 @@ for modis_f, sn in zip(modis_files_list, snames):
         ax.set_title(f'{sn} - ETo during USDM level {USDM_drought_threshhold}+ Drought.\n {txt_USDM_drought}; NDVI >= {NDVI_high_thresh}')
         ax.set_xlabel('Daily Station ETo (mm)')
         ax.set_ylabel('Daily GRIDMET ETo (mm)')
-        plt.savefig(os.path.join(plot_output, f'USDM_drought_comparison_{sn}_USDMlvl{USDM_drought_threshhold}.png'))
+        plt.savefig(os.path.join(plot_output, f'USDM_drought_comparison_{sn}_USDMlvl{USDM_drought_threshhold}.pdf'))
         # plt.show()
     else:
         pass
@@ -466,7 +474,7 @@ for modis_f, sn in zip(modis_files_list, snames):
             f'{sn} - ETo with USDM level < {USDM_drought_threshhold}.\n {txt_USDM_nondrought}; NDVI >= {NDVI_high_thresh}')
         ax.set_xlabel('Daily Station ETo (mm)')
         ax.set_ylabel('Daily GRIDMET ETo (mm)')
-        plt.savefig(os.path.join(plot_output, f'USDM_non_drought_comparison_{sn}_USDMlvl{USDM_drought_threshhold}.png'))
+        plt.savefig(os.path.join(plot_output, f'USDM_non_drought_comparison_{sn}_USDMlvl{USDM_drought_threshhold}.pdf'))
         # plt.show()
 
 # dump stats as a yml file
