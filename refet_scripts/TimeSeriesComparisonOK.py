@@ -27,17 +27,16 @@ from ETref_tools.metdata_preprocessor import okmesonet_preprocess
  metdata_preprocessor.py was used to separate files from a data request mega-file into individual files that can be 
  dealt with individually and that correspond to extracted GRIDMET files."""
 
-
-gridmet_root = r'Z:\Users\Gabe\refET\OKMesonet_GridMet'
+gridmet_root = r'Z:\Users\Gabe\refET\OK_Mesonet\OKMesonet_GridMet'
 okmesonet_root = r'Z:\Users\Gabe\refET\OK_Mesonet'
 
-yearly_output = r'Z:\Users\Gabe\refET\OKMESONET_GRIDMET_yearly_compare'
-monthly_output = r'Z:\Users\Gabe\refET\OKMESONET_GRIDMET_monthly_compare'
-daily_output = r'Z:\Users\Gabe\refET\OKMESONET_GRIDMET_daily_compare'
+yearly_output = r'Z:\Users\Gabe\refET\OK_Mesonet\OKMESONET_GRIDMET_yearly_compare'
+monthly_output = r'Z:\Users\Gabe\refET\OK_Mesonet\OKMESONET_GRIDMET_monthly_compare'
+daily_output = r'Z:\Users\Gabe\refET\OK_Mesonet\OKMESONET_GRIDMET_daily_compare'
 if not os.path.exists(daily_output):
     os.mkdir(daily_output)
 
-fig_output = r'Z:\Users\Gabe\refET\ok_figs'
+fig_output = r'Z:\Users\Gabe\refET\OK_Mesonet\ok_figs'
 
 metpaths = []
 ok_filenames = []
@@ -113,7 +112,7 @@ for gmp, mp, okn in zip(gridmet_paths, azmet_paths, names_in_common):
                          solar='ATOT',
                          ppt='RAIN', maxrelhum='HMAX', minrelhum='HMIN',
                          avgrelhum='HAVG',
-                         sc_wind_mg='WSPD', doy='DOY')
+                         sc_wind_mg='2AVG', doy='DOY')
 
 
     m_df = calc_daily_ETo_uniformat(m_df, meters_abv_sealevel=meters_abv_sl, lonlat=lonlat, smoothing=False)

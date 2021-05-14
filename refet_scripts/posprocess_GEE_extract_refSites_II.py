@@ -29,12 +29,9 @@ from refet_scripts.statistics_library import calc_kge, calc_mbe, calc_sde
 from refet_scripts.drought_USDM_timeseries import drought_USDM
 
 
-
-# TODO - Check the timeseries carefully. High NDVI periods that are within drought appear not to be showing up.
-#  Chester DE, etc. Re-check your smoothing algorithm. Is there an inherent weakness if the site is not irrigated?
-# todo - Irrigated sites (EVAX) may not have decent fields around them. Animations?!?!
-# todo - make all figure plots the same scale, consider plotting colors on top of each other, drought vs non drought.
-# todo - histograms....
+# Is there an inherent weakness if the site is not irrigated? <-
+# at many sites. (Fixed MATH ERROR in metdata_preprocessor.py)
+# GET more irrigated sites (DONE)
 
 """
 Pulling out NDVI values extracted by GEE surrounding weather stations, 
@@ -126,7 +123,7 @@ def get_USDM_drought_from_file(dpath, thresh=3):
                 try:
                     drought_val = int(lst[1])
                 except ValueError:
-                    # todo - Note: abnormal dryness is also 0, so could add confusion to analysis.
+                    # Note: abnormal dryness is also 0, so could add confusion to analysis.
                     drought_val = 0
                 date_val = datetime.strptime(lst[0], '%Y%m%d')
 
@@ -177,7 +174,7 @@ def smooth_and_interpolate_ndvi(ndvi_vals, ndvi_dates, daily_station_ts, daily_s
 
     daily_modis = satellite_df.resample('D').mean()
     daily_modis['linear_ndvi'] = daily_modis['ndvi_vals'].interpolate()
-    daily_modis['smooth_ndvi'] = daily_modis['linear_ndvi'].rolling('10D').mean()
+    daily_modis['smooth_ndvi'] = daily_modis['linear_ndvi'] #.rolling('3D').mean()
 
     big_green = pd.merge(daily_modis, station_df, how='outer', left_index=True, right_index=True)
 
@@ -192,7 +189,7 @@ USDM_drought_threshhold = 1
 # meteorological data for selected sites.
 metdata_root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\selected_timeseries_comparisons'
 # high and low threshold for NDVI work.
-NDVI_high_thresh = 0.7
+NDVI_high_thresh = 0.5
 NDVI_low_thresh = 0.35
 # Location for the NDVI timeseries
 combined_root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\terra_aqua_ndvi_merged'
@@ -200,18 +197,26 @@ combined_root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\terra_aqua_ndv
 plot_output = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\script-generated_plots'
 
 # two lists associating the correct site with correct filenames
-# todo - Z:\Users\Gabe\refET\deliverable_june18\processed_site_GRIDMET_timeseries\Del_GRIDMET_daily_compare
-#  doesn't have blackbird DE in it
-snames = ['YumaSouthAZ', 'PalomaAZ', 'HarquahalaAZ', 'DeKalbIL', 'BondvilleIL',
-          'MonmouthIL', 'AntelopeValleyNV', 'CloverValleyNV', 'SnakeValleyNV',
-          'ChesterPA', 'LaurelDE',
-          'ROCKNC', 'LAKENC', 'NEWLNC',
-          'LANEOK', 'RINGOK', 'EVAXOK']  # 'BlackbirdDE',
-ns_names = ['AZ1', 'AZ2', 'AZ3', 'IL1', 'IL2',
-            'IL3', 'NV1', 'NV2', 'NV3',
-            'PA1',  'DE2',
-            'NC1', 'NC2', 'NC3',
-            'OK1', 'OK2', 'OK3']  # 'DE1',
+snames = ['YumaSouthAZ', 'PalomaAZ', 'HarquahalaAZ',
+          'WilcoxBenchAZ', 'QueenCreekAZ',
+          'RollAZ', 'CoolidgeAZ', # Kansas Settlement, 'YumaNorthGilaAZ'
+          'DeKalbIL', 'BondvilleIL', 'MonmouthIL',
+          'AntelopeValleyNV', 'CloverValleyNV', 'SnakeValleyNV',
+          'SandSpringValleyNV', 'SmithValleyNV', 'HualapaiFlatNV',
+          'ParadiseValleyNV', 'ReeseRiverValleyNV', # MoapaValleyNV, blah blah WMA
+          'LANEOK', 'RINGOK', 'EVAXOK',
+          'BOISOK', 'HOLLOK', 'ALTUOK',
+          'TIPTOK', 'GOODOK']
+ns_names = ['AZ1', 'AZ2', 'AZ3',
+            'AZ5', 'AZ6',
+            'AZ8', 'AZ9',  # 'AZ4', 'AZ7',
+            'IL1', 'IL2', 'IL3',
+            'NV1', 'NV2', 'NV3',
+            'NV4',  'NV6', 'NV7',
+            'NV8', 'NV9',  # 'NV5', 'NV10',
+            'OK1', 'OK2', 'OK3',
+            'OK4', 'OK5', 'OK6',
+            'OK7', 'OK8']
 modis_files_list = [os.path.join(combined_root, f'{i}_modis_ndvi.csv') for i in ns_names]
 
 # data dictionary (a dictionary of data_dictonaries)
@@ -296,7 +301,7 @@ for modis_f, sn in zip(modis_files_list, snames):
         USDM_nonDrought_df = drought_data_grab(brackets=USDM_nonDrought_brackets)
         # now control drought for NDVI
         USDM_drought_df['drought_veg_ref'] = (USDM_drought_df['smooth_ndvi'] >= NDVI_high_thresh)
-        USDM_nonDrought_df['drought_veg_nonref'] = (USDM_nonDrought_df['smooth_ndvi'] >= NDVI_high_thresh)
+        USDM_nonDrought_df['nondrought_veg_ref'] = (USDM_nonDrought_df['smooth_ndvi'] >= NDVI_high_thresh)
 
         # plot daily eto where ndvi is greater/less than a threshold
         smoothed_ts_df['veg_ref'] = (smoothed_ts_df['smooth_ndvi'] >= NDVI_high_thresh)
@@ -335,6 +340,9 @@ for modis_f, sn in zip(modis_files_list, snames):
             y_usdm_non_list = y_usdm_nonDrought.to_list()
         else:
             pass
+
+
+
         # doing all the required statistics.
         def do_stats(xlst, ylst, text):
             x_data = []
@@ -349,7 +357,8 @@ for modis_f, sn in zip(modis_files_list, snames):
                 kge, alpha, beta, pearson_r = calc_kge(y_o=x_data, y_m=y_data)
                 mbe = calc_mbe(y_o=x_data, y_m=y_data)
                 sde = calc_sde(y_o=x_data, y_m=y_data)
-                print(f'Site, {sn}, kge {kge}, alpha {alpha}, beta {beta}, pearson r {pearson_r}, mbe {mbe}, sde {sde}')
+                print(f'Site, {sn}, kge {kge}, alpha {alpha}, beta {beta}, '
+                      f'pearson r {pearson_r}, mbe {mbe}, sde {sde}')
                 site_dict = {'site': sn, 'kge': kge, 'alpha': alpha, 'beta': beta,
                              'pearson_r': pearson_r, 'mbe': mbe, 'sde': sde, 'nx': len(x_data), 'ny': len(y_data)}
                 stat_dict[f'{sn}_{text}'] = site_dict
@@ -391,8 +400,6 @@ for modis_f, sn in zip(modis_files_list, snames):
     except:
         txt_USDM_nondrought = ''
 
-
-
     # === plot drought timeseries ===
     fig, ax = plt.subplots()
     ax.plot(dates, vals, color='green', label='Terra/Aqua MODIS NDVI')
@@ -408,7 +415,62 @@ for modis_f, sn in zip(modis_files_list, snames):
     # plt.show()
     plt.savefig(os.path.join(plot_output, f'NDVI_drought_timeseries_{sn}_USDMlvl{USDM_drought_threshhold}.jpeg'))
 
-    # ..... HIGH NDVI occurences.....
+    # make a dataframe that contains values, only where valid station data exists.
+    smoothed_ndvi_hist_df = smoothed_ts_df[smoothed_ts_df['daily_station_eto'].notnull()]
+    drought_hist_df = USDM_drought_df[USDM_drought_df['daily_station_eto'].notnull()]
+    non_drought_hist_df = USDM_nonDrought_df[USDM_nonDrought_df['daily_station_eto'].notnull()]
+
+    # ====== PLOT high NDVI superimposed GRIDMET and Station Histograms, and BELOW on shared axis, plot low NDVI =======
+
+    ax1 = plt.subplot(2, 1, 1)
+    ax1.hist(smoothed_ndvi_hist_df[smoothed_ndvi_hist_df['veg_ref']]['daily_station_eto'], bins=15, alpha=0.5, color='blue', label='High NDVI Station ETo')
+    ax1.hist(smoothed_ndvi_hist_df[smoothed_ndvi_hist_df['veg_ref']]['daily_gm_eto'], bins=15, alpha=0.5, color='green', label='High NDVI GRIDMET ETo')
+    ax1.set_xlim([0, 12])
+    ax1.legend(loc='upper right', prop={'size': 6})
+    ax1.title.set_text(f'{sn} Reference, NDVI > {NDVI_high_thresh}')
+
+    ax2 = plt.subplot(2, 1, 2)
+    ax2.hist(smoothed_ndvi_hist_df[smoothed_ndvi_hist_df['veg_nonref']]['daily_station_eto'], bins=15, alpha=0.5, color='blue', label='Low NDVIStation ETo')
+    ax2.hist(smoothed_ndvi_hist_df[smoothed_ndvi_hist_df['veg_nonref']]['daily_gm_eto'], bins=15, alpha=0.5, color='green', label='Low NDVIGRIDMET ETo')
+    ax2.set_xlim([0, 12])
+    ax2.legend(loc='upper right', prop={'size': 6})
+    ax2.title.set_text(f'{sn} Non Reference, NDVI < {NDVI_low_thresh}')
+    ax2.set_xlabel('ETo in mm')
+    # plt.title(f'{sn} Reference/Non Reference Condtions')
+    plt.tight_layout()
+    plt.savefig(os.path.join(plot_output, f'Histo_NDVI_{sn}.jpeg'))
+    # plt.show()
+    plt.close()
+
+    # === PLOT superimposed Drought Gridmet and Station Histograms, and BELOW, plot nondrought, Control for NDVI =======
+    # todo -- Make cols same width: https://stackoverflow.com/questions/41080028/how-to-make-the-width-of-histogram-columns-all-the-same
+    ax3 = plt.subplot(2, 1, 1)
+    ax3.hist(drought_hist_df[drought_hist_df['drought_veg_ref']]['daily_station_eto'],
+             bins=15, alpha=0.5, color='blue', label=f"Drought Station ETo (n={len(drought_hist_df[drought_hist_df['drought_veg_ref']]['daily_station_eto'])})")
+    ax3.hist(drought_hist_df[drought_hist_df['drought_veg_ref']]['daily_gm_eto'],
+             bins=15, alpha=0.5, color='green', label=f"Drought GRIDMET ETo (n={len(drought_hist_df[drought_hist_df['drought_veg_ref']]['daily_gm_eto'])})")
+    ax3.set_xlim([0, 12])
+    ax3.legend(loc='upper right', prop={'size': 6})
+    ax3.title.set_text(f'{sn} Drought Level {USDM_drought_threshhold}+ under Reference, NDVI > {NDVI_high_thresh}')
+
+    ax4 = plt.subplot(2, 1, 2)
+    ax4.hist(non_drought_hist_df[non_drought_hist_df['nondrought_veg_ref']]['daily_station_eto'],
+             bins=15, alpha=0.5, color='blue', label=f"Non Drought Station ETo (n={len(non_drought_hist_df[non_drought_hist_df['nondrought_veg_ref']]['daily_station_eto'])})")
+    ax4.hist(non_drought_hist_df[non_drought_hist_df['nondrought_veg_ref']]['daily_gm_eto'],
+             bins=15, alpha=0.5, color='green', label=f"Non Drought GRIDMET ETo (n={len(non_drought_hist_df[non_drought_hist_df['nondrought_veg_ref']]['daily_gm_eto'])}")
+    ax4.set_xlim([0, 12])
+    ax4.legend(loc='upper right', prop={'size': 6})
+    ax4.title.set_text(f'{sn} Non Drought under Reference, NDVI > {NDVI_high_thresh}')
+    ax4.set_xlabel('ETo in mm')
+    # Todo - how to set big title?
+    # plt.title(f'{sn} USDM Drought >{USDM_drought_threshhold} under Reference Condtions (NDVI>{NDVI_high_thresh})')
+    plt.tight_layout()
+    plt.savefig(os.path.join(plot_output, f'Histo_drought_{sn}_USDMlvl{USDM_drought_threshhold}.jpeg'))
+    # plt.show()
+    plt.close()
+
+
+    # ... HIGH NDVI occurences ...
     fig, ax = plt.subplots()
     ax.scatter(smoothed_ts_df[smoothed_ts_df['veg_ref']]['daily_station_eto'],
                smoothed_ts_df[smoothed_ts_df['veg_ref']]['daily_gm_eto'], edgecolor='blue', facecolor='none', label='ETo (mm)')
@@ -439,6 +501,23 @@ for modis_f, sn in zip(modis_files_list, snames):
     plt.savefig(os.path.join(plot_output, f'lowNDVI_comparison_{sn}.jpeg'))
     # plt.show()
 
+    # ..... All Data.....
+    fig, ax = plt.subplots()
+    ax.scatter(smoothed_ts_df['daily_station_eto'],
+               smoothed_ts_df['daily_gm_eto'],
+               edgecolor='blue', facecolor='none', label='ETo (mm)')
+    ax.plot(smoothed_ts_df['daily_station_eto'],
+            smoothed_ts_df['daily_station_eto'],
+            color='black', label='line of agreement')
+
+    ax.grid(True)
+    ax.legend(loc='lower right')
+    ax.set_title(f'{sn} - ETo all Valid Dates')
+    ax.set_xlabel('Daily Station ETo (mm) ')
+    ax.set_ylabel('Daily GRIDMET ETo (mm)')
+    plt.savefig(os.path.join(plot_output, f'FullDailyComparison_{sn}.jpeg'))
+    # plt.show()
+
     if len(USDM_drought_brackets)>0:
         # ================= USDM Drought =====================
         fig, ax = plt.subplots()
@@ -446,8 +525,8 @@ for modis_f, sn in zip(modis_files_list, snames):
                    USDM_drought_df[USDM_drought_df['drought_veg_ref']]['daily_gm_eto'],
                    edgecolor='blue', facecolor='none', label='ETo (mm)')
         # the one-to-one line
-        ax.plot(USDM_drought_df['daily_station_eto'],
-                USDM_drought_df['daily_station_eto'],
+        ax.plot(USDM_drought_df[USDM_drought_df['drought_veg_ref']]['daily_station_eto'],
+                USDM_drought_df[USDM_drought_df['drought_veg_ref']]['daily_station_eto'],
                 color='black', label='line of agreement')
         ax.grid(True)
         ax.legend(loc='lower right')
@@ -461,12 +540,12 @@ for modis_f, sn in zip(modis_files_list, snames):
     if len(USDM_nonDrought_brackets)>0:
         # ================= USDM NON Drought =====================
         fig, ax = plt.subplots()
-        ax.scatter(USDM_nonDrought_df[USDM_nonDrought_df['drought_veg_nonref']]['daily_station_eto'],
-                   USDM_nonDrought_df[USDM_nonDrought_df['drought_veg_nonref']]['daily_gm_eto'],
+        ax.scatter(USDM_nonDrought_df[USDM_nonDrought_df['nondrought_veg_ref']]['daily_station_eto'],
+                   USDM_nonDrought_df[USDM_nonDrought_df['nondrought_veg_ref']]['daily_gm_eto'],
                    edgecolor='blue', facecolor='none', label='ETo (mm)')
         # the one-to-one line
-        ax.plot(USDM_nonDrought_df['daily_station_eto'],
-                USDM_nonDrought_df['daily_station_eto'],
+        ax.plot(USDM_nonDrought_df[USDM_nonDrought_df['nondrought_veg_ref']]['daily_station_eto'],
+                USDM_nonDrought_df[USDM_nonDrought_df['nondrought_veg_ref']]['daily_station_eto'],
                 color='black', label='line of agreement')
         ax.grid(True)
         ax.legend(loc='lower right')

@@ -49,6 +49,7 @@ terra_keys = []
 aqua_dict = {}
 aqua_keys = []
 for t, a, n in zip(terra, aqua, names):
+    print(t, a)
 
     with open(t, 'r') as rterr:
         for i, l in enumerate(rterr):
@@ -57,7 +58,13 @@ for t, a, n in zip(terra, aqua, names):
                 # Get rid of the first and last entry for the dates
                 tdts = l.split(',')[1:-1]
                 # print('dts: ', l)
-                tdt_lst = [datetime.strptime(dd, '%Y-%m-%d') for dd in tdts]
+                tdt_lst = []
+                for dd in tdts:
+                    try:
+                        tdt_lst.append(datetime.strptime(dd, '%Y-%m-%d'))
+                    except ValueError:
+                        tdt_lst.append(datetime.strptime(dd, '%m/%d/%Y'))
+                # tdt_lst = [datetime.strptime(dd, '%Y-%m-%d') for dd in tdts]
 
                 # terra_dict[f'{n}_terra_dts'] = dts
                 # terra_keys.append(f'{n}_terra_dts')
@@ -69,7 +76,17 @@ for t, a, n in zip(terra, aqua, names):
                 # strip out unecessary data
                 raw_ndvi = [f.strip('{NDVI=') for f in raw_ndvi]
                 traw_ndvi = [j.strip('}') for j in raw_ndvi]
-                tndvi = [float(p) for p in traw_ndvi]
+                # # need to remove a very strange GEE entry from the list
+                # if '"{""geodesic"":false' in traw_ndvi:
+                #     traw_ndvi[:-1] = 'NAN'
+                tndvi = []
+                for p in traw_ndvi:
+                    try:
+                        tndvi.append(float(p))
+                    except ValueError:
+                        tndvi.append(float('NAN'))
+
+                print(len(tndvi), 'tndvi')
 
                 # terra_dict[f'{n}_terra_vals'] = ndvi
                 # terra_keys.append(f'{n}_terra_vals')
@@ -79,7 +96,13 @@ for t, a, n in zip(terra, aqua, names):
             if i == 0:
                 # Get rid of the first and last entry for the dates
                 adts = l.split(',')[1:-1]
-                adt_lst = [datetime.strptime(dd, '%Y-%m-%d') for dd in adts]
+                # adt_lst = [datetime.strptime(dd, '%Y-%m-%d') for dd in adts]
+                adt_lst = []
+                for dd in adts:
+                    try:
+                        adt_lst.append(datetime.strptime(dd, '%Y-%m-%d'))
+                    except ValueError:
+                        adt_lst.append(datetime.strptime(dd, '%m/%d/%Y'))
 
                 # aqua_dict[f'{n}_aqua_dts'] = dts
                 # aqua_keys.append(f'{n}_aqua_dts')
@@ -98,6 +121,7 @@ for t, a, n in zip(terra, aqua, names):
                         andvi.append(float(p))
                     except ValueError:
                         andvi.append(float('NAN'))
+                print(len(andvi), 'andvi')
 
 
                 # aqua_dict[f'{n}_aqua_vals'] = ndvi

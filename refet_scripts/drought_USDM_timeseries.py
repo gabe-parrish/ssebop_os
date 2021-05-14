@@ -228,9 +228,16 @@ def drought_USDM(coords, root_dir, fmt='USDM_YYYYmmdd.shp', output_dir=None, sta
 def generate_drought_files():
 
     # the site 'name' in the shapefile attribute.
-    snames = ['YumaSouthAZ', 'PalomaAZ', 'HarquahalaAZ', 'DeKalbIL', 'BondvilleIL', 'MonmouthIL', 'AntelopeValleyNV',
-              'CloverValleyNV', 'SnakeValleyNV', 'EVAXOK', 'RINGOK', 'LANEOK', 'NEWLNC', 'LAKENC', 'ROCKNC',
-              'ChesterPA', 'BlackbirdDE', 'LaurelDE']
+    snames = ['YumaSouthAZ', 'PalomaAZ', 'HarquahalaAZ',
+              'WilcoxBenchAZ', 'QueenCreekAZ',
+              'RollAZ', 'CoolidgeAZ', # Kansas Settlement, 'YumaNorthGilaAZ'
+              'DeKalbIL', 'BondvilleIL', 'MonmouthIL',
+              'AntelopeValleyNV', 'CloverValleyNV', 'SnakeValleyNV',
+              'SandSpringValleyNV', 'SmithValleyNV', 'HualapaiFlatNV',
+              'ParadiseValleyNV', 'ReeseRiverValleyNV',  # MoapaValleyNV, Something_MA
+              'LANEOK', 'RINGOK', 'EVAXOK',
+              'BOISOK', 'HOLLOK', 'ALTUOK',
+              'TIPTOK', 'GOODOK']
     # =loop through the features in the study site locations, and extract the coordinates, then using the
     #  Drought_USDM class, make csv files all throghout.
     study_site_locations = r'Z:\Users\Gabe\refET\refET_geo_files\true_reference_selectedCONUS.shp'

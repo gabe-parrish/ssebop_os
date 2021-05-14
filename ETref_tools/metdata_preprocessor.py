@@ -294,9 +294,8 @@ def okmesonet_preprocess(metpath):
 
     okdf['RAIN'] = okdf.apply(lambda x: convert_in_to_mm(x['RAIN']), axis=1)
 
-    okdf['HMAX'] = okdf.apply(lambda x: convert_mph_to_mps(x['HMAX']), axis=1)
-    okdf['HMIN'] = okdf.apply(lambda x: convert_mph_to_mps(x['HMIN']), axis=1)
-    okdf['HAVG'] = okdf.apply(lambda x: convert_mph_to_mps(x['HAVG']), axis=1)
+    # This was llllllll
+    okdf['2AVG'] = okdf.apply(lambda x: convert_mph_to_mps(x['2AVG']), axis=1)
 
     # set the index to the datetime.
     okdf = okdf.set_index('dt')
