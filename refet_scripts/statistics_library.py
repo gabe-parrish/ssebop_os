@@ -208,3 +208,5 @@ def calc_sde(y_o, y_m):
 
     return sde_stat(y_o=y_o, y_m=y_m, n=n, mbe=mbe)
 
+def calc_variance(y):
+    pass
