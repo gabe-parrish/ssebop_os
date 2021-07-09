@@ -28,7 +28,6 @@ from refet_scripts.statistics_library import calc_kge, calc_mbe, calc_sde
 # ============= standard library imports ========================
 from refet_scripts.drought_USDM_timeseries import drought_USDM
 
-
 # Is there an inherent weakness if the site is not irrigated? <-
 # at many sites. (Fixed MATH ERROR in metdata_preprocessor.py)
 # GET more irrigated sites (DONE)
@@ -37,7 +36,6 @@ from refet_scripts.drought_USDM_timeseries import drought_USDM
 Pulling out NDVI values extracted by GEE surrounding weather stations, 
 then plotting the timeseries.
 """
-
 
 def yearly_data_extract(metpath, var='Ppt'):
 
