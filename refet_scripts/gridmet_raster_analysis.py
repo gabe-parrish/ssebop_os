@@ -331,29 +331,24 @@ for study_year in study_years:
                 gm_arr[~constantarr_bool] = np.nan
                 gm_arr[nan_bool] = np.nan
 
-                # output gm arr
-                with rasterio.open(os.path.join(processed_out,
-                                                'eto_{}{:03d}.tif'.format(gm_date.year, gm_date.timetuple().tm_yday)),
-                                   'w', **stack_meta) as wfile:
-                    wfile.write_band(1, gm_arr)
+                # If the array is all NAN, don't output it.
+                check_arr = np.nan_to_num(gm_arr)
+
+
+                if np.sum(check_arr) != 0:
+
+                    # output gm arr
+                    with rasterio.open(os.path.join(processed_out,
+                                                    'eto_{}{:03d}.tif'.format(gm_date.year, gm_date.timetuple().tm_yday)),
+                                       'w', **stack_meta) as wfile:
+                        wfile.write_band(1, gm_arr)
+                else:
+                    print(f'gm_arr for date {gm_date.year}-{gm_date.month}-{gm_date.day} is all NANs, so we skip it ')
+                    pass
 
         else:
             print("no valid geometry intersections, so we're passing")
             pass
-
-
-
-
-            # idea for a different workflow
-            # # flatten the array,
-            # gm_data = gm_arr.flatten()
-            #
-            # # plot a histogram
-            # n, bins, patches = plt.hist(gm_data, bins='auto', color='blue', alpha=0.7, rwidth=0.85)
-            # plt.grid()
-            # plt.xlabel('ETo (mm)')
-            # plt.ylabel('Count')
-            # plt.show()
 
 
 

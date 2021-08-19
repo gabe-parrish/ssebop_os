@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import geopandas as gpd
 from datetime import datetime as dt
 from glob import glob
+import sys
 
 """The same as gridmet_raster_analysis.py but clips to non-drought regions for comparisons with
  the drought gridmet periods..."""
@@ -78,8 +79,6 @@ def rasterize_gdf(gdf, temp_location, meta_obj, category='DM', fill_vall=None):
     :return:
     """
 
-    # meta_obj['dtype'] = 'int16'
-
     # is writing it out strictly necessary?
     with rasterio.open(temp_location, 'w+', **meta_obj) as wfile:
         w_arr = wfile.read(1)
@@ -87,10 +86,32 @@ def rasterize_gdf(gdf, temp_location, meta_obj, category='DM', fill_vall=None):
         # https://rasterio.readthedocs.io/en/latest/api/rasterio.features.html
         shapes = [(geom, value) for geom, value in zip(gdf.geometry, gdf[category])]
         if fill_vall is None:
-            burned_img = features.rasterize(shapes=shapes, fill=float('NaN'), out=w_arr, transform=wfile.transform)
+            try:
+                # TODO - The Fill value does not work like one might expect...
+                burned_img = features.rasterize(shapes=shapes, fill=-99, out=w_arr, transform=wfile.transform)
+                # # i feel like the fill vall should take care of this, but I don't think it does.
+                # # so the line below is necessary
+                # nan_bool = np.isnan(burned_img)
+                # burned_img[nan_bool] = np.nan
+            except ValueError:
+                print('no valid geometries, filling with NAN')
+                burned_img = np.empty(w_arr.shape)
+                burned_img[:] = np.nan
+
+        elif fill_vall == 0:
+            print(f'burning w fill value {fill_vall}')
+            try:
+                burned_img = features.rasterize(shapes=shapes, fill=-99, out=w_arr, transform=wfile.transform)  # all_touched=False
+                # # i feel like the fill vall should take care of this, but I don't think it does.
+                # # so the line below is necessary
+                # nan_bool = np.isnan(burned_img)
+                # burned_img[nan_bool] = 0.0
+            except ValueError:
+                print('no valid geometries... filling with zeros')
+                burned_img = np.zeros(w_arr.shape)
         else:
-            print('burning w fill value')
-            burned_img = features.rasterize(shapes=shapes, fill=fill_vall, out=w_arr, transform=wfile.transform)
+            print('fill valll issss not valid')
+            sys.exit()
         wfile.write_band(1, burned_img)
         return burned_img
 
@@ -248,22 +269,26 @@ def filter_growing_season(gs_start, gs_end, path_tup_lst, date_tup_lst):
 
 # for the study area:
 shproot = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing\state_boundaries'
-outroot = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing'
+outroot = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing_II'
 
 #=======================================================================
 # todo fill out
-shape = os.path.join(shproot, 'AZ_aoi.shp')
-processed_out = os.path.join(outroot, 'AZ_high_NDVI_nondrought_rasters')
-processing_year = '2014'
+shape = os.path.join(shproot, 'il_aoi.shp')
+processed_out = os.path.join(outroot, 'IL_high_NDVI_nondrought_rasters')
+processing_year = '2012'
 #=======================================================================
 
+if not os.path.exists(processed_out):
+    os.mkdir(processed_out)
 
 dpaths = sorted(glob(r'Z:\Users\Gabe\refET\Drought\full_ts\USDM_{}*.shp'.format(processing_year)))
 print('these are the dpaths')
 print([os.path.split(p)[-1] for p in dpaths])
 
 # a location for rasterizing drought files
-temp_location = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing\tempI'
+temp_location = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing_II\tempI'
+if not os.path.exists(temp_location):
+    os.mkdir(temp_location)
 stack_sample_file = r'Z:\Data\NDVI\USA\V006_250m\2001\2001001.250_m_16_days_NDVI.tif'
 
 stack_meta = get_std_transform(shapefile=shape, sample_raster=stack_sample_file)
@@ -283,23 +308,43 @@ for d_tup, dt_tup in zip(drought_aois, drought_interval_lst):
 
     try:
         d_start_aoi = d_tup[0]
-        # set the fill value to zero so you can filter more easily.
+        # set the fill value to zero (but it doesn't matter because the raster will be
+        # filled by nodata defined in 'stack_meta')
         d1_aoi_arr = rasterize_gdf(gdf=d_start_aoi, temp_location=os.path.join(temp_location, 'tempI.tif'),
-                                   meta_obj=stack_meta, category='DM', fill_vall=0)
+                                   meta_obj=stack_meta, category='DM', fill_vall=None)
+    except rasterio.errors.RasterioIOError:
+        raise
     except:
-        d1_aoi_arr = np.zeros(shape=(stack_meta['height'], stack_meta['width']))
+        print('exception thrown, no valid geometry objects?')
+        raise
     try:
         d_end_aoi = d_tup[1]
         d2_aoi_arr = rasterize_gdf(gdf=d_end_aoi, temp_location=os.path.join(temp_location, 'tempI.tif'),
-                                   meta_obj=stack_meta, category='DM', fill_vall=0)
+                                   meta_obj=stack_meta, category='DM', fill_vall=None)
+    except rasterio.errors.RasterioIOError:
+        raise
     except:
-        d2_aoi_arr = np.zeros(shape=(stack_meta['height'], stack_meta['width']))
+        print('exception thrown, no valid geometry objects???')
+        raise
+        # d2_aoi_arr = np.zeros(shape=(stack_meta['height'], stack_meta['width']))
 
-    # # output the drought arrays to test
-    # tpath = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing\rasterize_test'
-    # with rasterio.open(os.path.join(tpath, f'drought_{dt_tup[0].year}{dt_tup[0].timetuple().tm_yday}.tif'),
-    #                    'w', **stack_meta) as src:
-    #     src.write_band(1, d1_aoi_arr)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ output the drought arrays to test ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # TODO - https://rasterio.readthedocs.io/en/latest/api/rasterio.windows.html (Clip off the edges of the image and adjust the transform...
+    # Suggested - Window.from_slices
+    # try hardcore setting the array vallues
+    d1_aoi_arr[d1_aoi_arr == stack_meta['nodata']] = -2
+    d2_aoi_arr[d2_aoi_arr == stack_meta['nodata']] = -2
+    tpath = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing_II\rasterize_test'
+    if not os.path.exists(tpath):
+        os.mkdir(tpath)
+    with rasterio.open(os.path.join(tpath, f'drought_{dt_tup[0].year}{dt_tup[0].timetuple().tm_yday}.tif'),
+                       'w', **stack_meta) as src:
+        src.write_band(1, d1_aoi_arr)
+    # output the drought arrays to test
+    with rasterio.open(os.path.join(tpath, f'drought_{dt_tup[1].year}{dt_tup[1].timetuple().tm_yday}.tif'),
+                       'w', **stack_meta) as src:
+        src.write_band(1, d2_aoi_arr)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     print('two drought dates: ', dt_tup[0].timetuple().tm_yday, dt_tup[1].timetuple().tm_yday)
     # find areas that remain under NON drought conditions continuously between two images.
@@ -339,9 +384,6 @@ for d_tup, dt_tup in zip(drought_aois, drought_interval_lst):
                                           dt1=ndvi_start, dt2=ndvi_end,
                                           target_dt=gm_date, alg='linear')
 
-        # print(f'ndvi arr is shape {ndvi_arr.shape}')
-        # print('ndvi dtype', ndvi_arr.dtype)
-        # fix the data type
         ndvi_arr = ndvi_arr.astype('float32')
         # convert units
         ndvi_arr *= (1/10000.0)
@@ -360,9 +402,25 @@ for d_tup, dt_tup in zip(drought_aois, drought_interval_lst):
         gm_arr[ndvi_bool] = np.nan
         gm_arr[~constantarr_bool] = np.nan
 
-        # output gm arr
-        with rasterio.open(os.path.join(processed_out, 'eto_{}{:03d}.tif'.format(gm_date.year, gm_date.timetuple().tm_yday)),
-                           'w', **stack_meta) as wfile:
-            wfile.write_band(1, gm_arr)
+
+        # # output gm arr
+        # with rasterio.open(os.path.join(processed_out, 'eto_{}{:03d}.tif'.format(gm_date.year, gm_date.timetuple().tm_yday)),
+        #                    'w', **stack_meta) as wfile:
+        #     wfile.write_band(1, gm_arr)
+
+        # If the array is all NAN, don't output it.
+        check_arr = np.nan_to_num(gm_arr, copy=True, nan=0.0)
+        # temporary testing
+        check_arr = np.array([1, 2, 3])
+
+        if np.sum(check_arr) != 0:
+
+            # output gm arr
+            with rasterio.open(os.path.join(processed_out, 'eto_{}{:03d}.tif'.format(gm_date.year, gm_date.timetuple().tm_yday)),
+                               'w', **stack_meta) as wfile:
+                wfile.write_band(1, gm_arr)
+        else:
+            print(f'gm_arr for date {gm_date.year}-{gm_date.month}-{gm_date.day} is all NANs, so we skip it ')
+            pass
 
 
