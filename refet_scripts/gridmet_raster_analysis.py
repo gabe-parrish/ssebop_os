@@ -4,6 +4,7 @@ import copy
 from rasterio import features
 from rasterio.vrt import WarpedVRT
 from rasterio.mask import mask
+import rasterio.windows as wndows
 import numpy as np
 from dateutil import relativedelta
 from rasterio.enums import Resampling
@@ -63,7 +64,7 @@ def return_drought_intersections(study_area, df_list):
     return new_lst
 
 
-def rasterize_gdf(gdf, temp_location, meta_obj, category='DM'):
+def rasterize_gdf(gdf, temp_location, meta_obj, category='DM', windowsize=3):
     """
     Takes a geodataframe, writes it to a file using sample_raster and a numerical category defined,
      and reads it back as a numpy array for analysis.
@@ -86,7 +87,27 @@ def rasterize_gdf(gdf, temp_location, meta_obj, category='DM'):
         shapes = [(geom, value) for geom, value in zip(gdf.geometry, gdf[category])]
         burned_img = features.rasterize(shapes=shapes, fill=0, out=w_arr, transform=wfile.transform)
         wfile.write_band(1, burned_img)
-        return burned_img
+        # return burned_img
+
+    slicewindow = wndows.Window.from_slices(rows=(windowsize, -windowsize), cols=(windowsize, -windowsize),
+                                            height=w_arr.shape[0], width=w_arr.shape[1])
+
+    with rasterio.open(temp_location) as rfile:
+
+        new_meta = rfile.meta.copy()
+        new_transform = rfile.window_transform(slicewindow)
+        print('new transform ', new_transform)
+        print('old transform', rfile.transform)
+        new_meta.update({
+            'height': slicewindow.height,
+            'width': slicewindow.width,
+            'transform': new_transform})
+
+        w = rfile.read(1, window=slicewindow)
+
+        print('shape of windowed read', w.shape)
+
+    return w, new_meta
 
 
 def generate_standard_vrt(rasterpath, meta):
@@ -231,14 +252,24 @@ def filter_growing_season(gs_start, gs_end, path_tup_lst, date_tup_lst):
 
 
 shppath = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing\state_boundaries'
-outroot = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing'
+outroot = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing_III'
+
 # =========================================================================================
-# todo - FILL out
+# # todo - FILL out
 # for the study area:
-shape = os.path.join(shppath, 'AZ_aoi.shp')
-processed_out = os.path.join(outroot, 'AZ_high_NDVI_LVL3_rasters')
-drought_lvl = 3
-study_years = ['2014', '2015', '2016', '2017']
+shape = os.path.join(shppath, 'OK_west.shp')
+processed_out = os.path.join(outroot, 'OKwest_LVL1_ndvi55_rasters')
+if not os.path.exists(processed_out):
+    os.mkdir(processed_out)
+drought_lvl = 1
+# for all sites 2001-2017 inclusive - overlap of GRIDMET (1980-2017), NDVI (2001-2018),
+# and Drought Monitor(2000-2020) Shapefiles
+study_years = [f'{i}' for i in range(2001, 2018)]
+ndvi_thresh = 0.55
+# set to True if you want the ndvi higher than the threshold
+thresh_high = True
+# if True, NDVI will be ignored
+ignore_ndvi = False
 # =========================================================================================
 
 for study_year in study_years:
@@ -247,8 +278,14 @@ for study_year in study_years:
     print([os.path.split(p)[-1] for p in dpaths])
 
     # a location for rasterizing drought files
-    temp_location = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing\temp'
-    stack_sample_file = r'Z:\Data\NDVI\USA\V006_250m\2001\2001001.250_m_16_days_NDVI.tif'
+    temp_location = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing_III\temp'
+    if not os.path.exists(temp_location):
+        os.mkdir(temp_location)
+
+    # # old -deadbeef
+    # stack_sample_file = r'Z:\Data\NDVI\USA\V006_250m\2001\2001001.250_m_16_days_NDVI.tif'
+    # new - livebeef
+    stack_sample_file = r'Z:\Data\ReferenceET\USA\Gridmet\Daily\ETo\2012\eto2012001.tif'
 
     stack_meta = get_std_transform(shapefile=shape, sample_raster=stack_sample_file)
     print('STACK META \n', stack_meta)
@@ -269,9 +306,9 @@ for study_year in study_years:
             print('ALL GOOD')
             d_start_aoi = dtup[0]
             d_end_aoi = dtup[1]
-            d1_aoi_arr = rasterize_gdf(gdf=d_start_aoi, temp_location=os.path.join(temp_location, 'temp.tif'),
+            d1_aoi_arr, d1_meta = rasterize_gdf(gdf=d_start_aoi, temp_location=os.path.join(temp_location, 'temp.tif'),
                                        meta_obj=stack_meta, category='DM')
-            d2_aoi_arr = rasterize_gdf(gdf=d_end_aoi, temp_location=os.path.join(temp_location, 'temp.tif'),
+            d2_aoi_arr, d2_meta = rasterize_gdf(gdf=d_end_aoi, temp_location=os.path.join(temp_location, 'temp.tif'),
                                        meta_obj=stack_meta, category='DM')
 
             print('two drought shapes: ', d1_aoi_arr.shape, d2_aoi_arr.shape)
@@ -292,47 +329,58 @@ for study_year in study_years:
             # for each gridmet image:
             for gm_img, gm_date in zip(gm_images, gm_dates):
                 # virtual warp out the gridmet for the study area and resample to the ndvi resolution.
-                gm_arr = generate_standard_vrt(rasterpath=gm_img, meta=stack_meta)
+                gm_arr = generate_standard_vrt(rasterpath=gm_img, meta=d1_meta)
                 print('gridmet dtype')
                 print(gm_arr.dtype)
                 gm_arr = gm_arr
                 # For each gridmet image, search for the matching NDVI image, or the two nearest ndvi images.
                 print(f'GM date: {gm_date.year}-{gm_date.timetuple().tm_yday}')
-                ndvi_tup, ndvi_dt_tup = find_ndvi_paths(root=r'Z:\Data\NDVI\USA\V006_250m', dt_obj=gm_date, fmat=None)
-                print('NDVI tuple: ', ndvi_tup)
 
-                # resample ndvi, and if necessary, interpolate
-                # if the ndvi files are the same, that means that the gridmet falls ON an NDVI image date, so we don't need to interpolate
-                if ndvi_tup[0] == ndvi_tup[1]:
-                    ndvi_arr = generate_standard_vrt(rasterpath=ndvi_tup[0], meta=stack_meta)
+                # if ignore_ndvi is set to False, we interpolate modis NDVI and filter according to NDVI thresholds.
+                if not ignore_ndvi:
+                    print('doing NDVI filter')
+                    ndvi_tup, ndvi_dt_tup = find_ndvi_paths(root=r'Z:\Data\NDVI\USA\V006_250m', dt_obj=gm_date, fmat=None)
+                    print('NDVI tuple: ', ndvi_tup)
+
+                    # resample ndvi, and if necessary, interpolate
+                    # if the ndvi files are the same, that means that the gridmet falls ON an NDVI image date, so we don't need to interpolate
+                    if ndvi_tup[0] == ndvi_tup[1]:
+                        ndvi_arr = generate_standard_vrt(rasterpath=ndvi_tup[0], meta=d1_meta)  # meta=stack_meta
+                    else:
+                        # we need to interpolate, so unpack the two nearest dates and do a linear interpolation
+                        ndvi_start, ndvi_end = ndvi_dt_tup
+                        arr1 = generate_standard_vrt(rasterpath=ndvi_tup[0], meta=d1_meta)  # meta=stack_meta
+                        arr2 = generate_standard_vrt(rasterpath=ndvi_tup[1], meta=d1_meta)  # meta=stack_meta
+
+                        ndvi_arr = interpolate_arrays(arr1=arr1, arr2=arr2,
+                                                      dt1=ndvi_start, dt2=ndvi_end,
+                                                      target_dt=gm_date, alg='linear')
+
+                    print(f'ndvi arr is shape {ndvi_arr.shape}')
+                    print('ndvi dtype', ndvi_arr.dtype)
+                    # fix the data type
+                    ndvi_arr = ndvi_arr.astype('float32')
+                    # convert units
+                    ndvi_arr *= (1/10000.0)
+
+                    if thresh_high:
+                        # make a boolean array (dont be fooled, it's counter intuitive bc we set the lower ndvis to NAN lower down)
+                        ndvi_bool = (ndvi_arr < ndvi_thresh)
+                    else:
+                        ndvi_bool = (ndvi_arr > ndvi_thresh)
+
+                    # filter the gridmet,
+                    # you want to turn where values are not good into NaN
+                    # set low ndvi
+                    gm_arr[ndvi_bool] = np.nan
                 else:
-                    # we need to interpolate, so unpack the two nearest dates and do a linear interpolation
-                    ndvi_start, ndvi_end = ndvi_dt_tup
-                    arr1 = generate_standard_vrt(rasterpath=ndvi_tup[0], meta=stack_meta)
-                    arr2 = generate_standard_vrt(rasterpath=ndvi_tup[1], meta=stack_meta)
+                    print('IGNORING NDVI')
 
-                    ndvi_arr = interpolate_arrays(arr1=arr1, arr2=arr2,
-                                                  dt1=ndvi_start, dt2=ndvi_end,
-                                                  target_dt=gm_date, alg='linear')
-
-                print(f'ndvi arr is shape {ndvi_arr.shape}')
-                print('ndvi dtype', ndvi_arr.dtype)
-                # fix the data type
-                ndvi_arr = ndvi_arr.astype('float32')
-                # convert units
-                ndvi_arr *= (1/10000.0)
-                # make a boolean array
-                ndvi_bool = (ndvi_arr < 0.7)
-
-                # filter the gridmet,
-                # you want to turn where values are not good into NaN
-                # set low ndvi
-                gm_arr[ndvi_bool] = np.nan
                 gm_arr[~constantarr_bool] = np.nan
                 gm_arr[nan_bool] = np.nan
 
                 # If the array is all NAN, don't output it.
-                check_arr = np.nan_to_num(gm_arr)
+                check_arr = np.nan_to_num(gm_arr, copy=True, nan=0.0)
 
 
                 if np.sum(check_arr) != 0:
@@ -340,7 +388,7 @@ for study_year in study_years:
                     # output gm arr
                     with rasterio.open(os.path.join(processed_out,
                                                     'eto_{}{:03d}.tif'.format(gm_date.year, gm_date.timetuple().tm_yday)),
-                                       'w', **stack_meta) as wfile:
+                                       'w', **d1_meta) as wfile:
                         wfile.write_band(1, gm_arr)
                 else:
                     print(f'gm_arr for date {gm_date.year}-{gm_date.month}-{gm_date.day} is all NANs, so we skip it ')

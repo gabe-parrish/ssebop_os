@@ -120,14 +120,16 @@ gs_startday = 1
 gs_endmonth = 9
 gs_endday = 30
 
-start_year = 2011
-end_year = 2013
 
-drought_root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing\OKeast_high_NDVI_drought_rasters'
-non_drought_root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing\OKeast_high_NDVI_nondrought_rasters'
-study_area = 'OK_East'
+start_year = 2001
+end_year = 2017
+
+
+drought_root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing_III\OKeast_LVL1_rasters'
+non_drought_root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing_III\OKeast_nondrought_rasters'
+study_area = 'OKeast'
 drought_lvl = '1'
-plot_output = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\histograms'
+plot_output = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\histograms_III'
 intervals = make_intervals(season_start=(gs_startmonth, gs_endmonth), season_end=(gs_endmonth, gs_endday),
                            startyear=start_year, endyear=end_year)
 
@@ -174,14 +176,17 @@ df = pd.DataFrame({'ETo_drought': drought_means,
                    'Dates': common_dates, 'delta_ETo': drought_diff})
 
 # plot a timeseries of drought differentials
-fig, ax = plt.subplots(figsize=(11, 8))
+fig, ax = plt.subplots(figsize=(17, 10))
 ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
 ax.bar(common_dates, drought_diff, color='red', label='Drought Difference (mm)')
+ax.tick_params(axis='x', labelsize=22)
+ax.tick_params(axis='y', labelsize=22)
 ax.grid(True)
-ax.legend(loc='lower right')
-ax.set_title(f'Drought Difference in Mean ETo Timeseries')
-ax.set_xlabel('Date')
-ax.set_ylabel('Drought ETo - Non-Drought ETo (mm)')
+ax.axhline(0, color='blue', lw=2)
+ax.legend(loc='lower right', prop={'size': 22})
+ax.set_title(f'{study_area} - Drought Difference in Mean ETo Timeseries', fontdict={'fontsize': 30, 'fontweight': 'medium'})
+ax.set_xlabel('Date', fontsize=26)
+ax.set_ylabel('Drought ETo lvl 1+ - Non-Drought ETo (mm)', fontsize=26)
 # plt.show()
 plt.savefig(os.path.join(plot_output, f'DeltaETo_TS_{study_area}_lvl{drought_lvl}.jpeg'))
 plt.show()

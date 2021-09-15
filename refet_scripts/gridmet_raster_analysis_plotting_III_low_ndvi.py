@@ -267,16 +267,21 @@ gs_startday = 1
 gs_endmonth = 9
 gs_endday = 30
 # # year interval
-start_year = 2001
-end_year = 2017
+# # IL
+# start_year = 2010
+# end_year = 2014
+# # AZ
+# start_year = 2014
+# end_year = 2017
+# OK
+start_year = 2008
+end_year = 2012
 
 
-drought_root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing_III\AZ_LVL1_ndvi55_rasters' # _high_NDVI
-non_drought_root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing_III\AZ_nondrought_rasters' # _high_NDVI
-study_area = 'AZ'
+drought_root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing_III\OKwest_low_NDVI_LVL1_rasters'
+non_drought_root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing_III\OKwest_low_NDVI_nondrought_rasters'
+study_area = 'OKwest'
 drought_lvl = '1'
-ndvi_filter_str = 'high_ndvi_filter'
-# ndvi_filter_str = 'no_ndvi_filter'
 plot_output = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\histograms_III'
 intervals = make_intervals(season_start=(gs_startmonth, gs_endmonth), season_end=(gs_endmonth, gs_endday),
                            startyear=start_year, endyear=end_year)
@@ -325,7 +330,7 @@ gm_nondrought_median = np.nanmedian(non_drought_study_values)
 # lower tailed critical value ?? Depends on degrees of freedom, and sigma 0.05
 print('running the t test')
 student_t_test(array1=non_drought_study_values, array2=drought_study_values, level=0.05,
-               outputloc=os.path.join(plot_output, f'{study_area}_LVL{drought_lvl}_stats_{ndvi_filter_str}_55.txt'), equal_variance=False, ttype='lower_tailed')
+               outputloc=os.path.join(plot_output, f'{study_area}_LVL{drought_lvl}_stats.txt'), equal_variance=False, ttype='lower_tailed')
 
 fig = plt.figure(figsize=(17, 12))
 # todo - Make cols same width: https://stackoverflow.com/questions/41080028/how-to-make-the-width-of-histogram-columns-all-the-same
@@ -341,13 +346,8 @@ ax3.tick_params(axis='x', labelsize=22)
 ax3.tick_params(axis='y', labelsize=22)
 ax3.legend(loc='upper right', prop={'size': 22})
 # ax3.title.set_text(f'GRIDMET Drought Level {drought_lvl}+ Growing Season ({start_year}-{end_year}), NDVI > 0.7', fontsize=20)
-if ndvi_filter_str == 'high_ndvi_filter':
-    ax3.set_title(f'GRIDMET Drought Level {drought_lvl}+ Growing Season ({start_year}-{end_year}), NDVI > 0.55',
-                  fontdict={'fontsize': 30, 'fontweight': 'medium'})
-else:
-    ax3.set_title(f'GRIDMET Drought Level {drought_lvl}+ Growing Season ({start_year}-{end_year})',
-                  fontdict={'fontsize': 30, 'fontweight': 'medium'})
-
+ax3.set_title(f'GRIDMET Drought Level {drought_lvl}+ Growing Season ({start_year}-{end_year}), NDVI < 0.4',
+              fontdict={'fontsize': 30, 'fontweight': 'medium'})
 
 ax4 = plt.subplot(2, 1, 2)
 ax4.hist(non_drought_study_values,
@@ -361,14 +361,14 @@ ax4.tick_params(axis='x', labelsize=22)
 ax4.tick_params(axis='y', labelsize=22)
 ax4.legend(loc='upper right', prop={'size': 22})  # fontsize=18
 # ax4.title.set_text(f'GRIDMET Non Drought Growing Season ({start_year}-{end_year}), NDVI > 0.7', fontsize=20)
-if ndvi_filter_str == 'high_ndvi_filter':
-    ax4.set_title(f'GRIDMET Non Drought Growing Season ({start_year}-{end_year}), NDVI > 0.55',
-                  fontdict={'fontsize': 30, 'fontweight': 'medium'})
-else:
-    ax4.set_title(f'GRIDMET Non Drought Growing Season ({start_year}-{end_year})',
-                  fontdict={'fontsize': 30, 'fontweight': 'medium'})
+ax4.set_title(f'GRIDMET Non Drought Growing Season ({start_year}-{end_year}), NDVI < 0.4',
+              fontdict={'fontsize': 30, 'fontweight': 'medium'})
 ax4.set_xlabel('ETo in mm', fontsize=26)
 plt.tight_layout()
-plt.savefig(os.path.join(plot_output,
-                         f'GM_histo_{study_area}_USDMlvl{drought_lvl}_{ndvi_filter_str}_55_matching_days_{start_year}_{end_year}.jpeg'))
+plt.savefig(os.path.join(plot_output, f'GM_histo_{study_area}_USDMlvl{drought_lvl}_matching_days_{start_year}_{end_year}_low_ndvi.jpeg'))
 plt.close()
+
+print(f'GM_histo_{study_area}_USDMlvl{drought_lvl}_matching_days, ({start_year}-{end_year}), NDVI < 0.4')
+print(gm_drought_mean, gm_drought_median)
+print(f'GRIDMET {study_area} Non Drought Growing Season ({start_year}-{end_year}), NDVI > 0.7')
+print((gm_nondrought_mean, gm_nondrought_median))
