@@ -261,12 +261,12 @@ outroot = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_drou
 # =========================================================================================
 # # todo - FILL out
 # for the study area:
-tmax = True
-shape = os.path.join(shppath, 'OK_west.shp')
-processed_out = os.path.join(outroot, 'OKwest_LVL1_ndvi55_rasters_tmax')
+tmax = False
+shape = os.path.join(shppath, 'OK_east.shp')
+processed_out = os.path.join(outroot, 'OKeast_LVL3_rasters_tmin')
 if not os.path.exists(processed_out):
     os.mkdir(processed_out)
-drought_lvl = 1
+drought_lvl = 3
 # for all sites 2001-2017 inclusive - overlap of GRIDMET (1980-2017), NDVI (2001-2018),
 # and Drought Monitor(2000-2020) Shapefiles
 study_years = [f'{i}' for i in range(2001, 2018)]
@@ -274,7 +274,7 @@ ndvi_thresh = 0.55
 # set to True if you want the ndvi higher than the threshold
 thresh_high = True
 # if True, NDVI will be ignored
-ignore_ndvi = False
+ignore_ndvi = True
 # =========================================================================================
 
 for study_year in study_years:
@@ -331,7 +331,7 @@ for study_year in study_years:
                 gm_images, gm_dates = get_temps_by_dt(root=r'Z:\Data\Temperature\USA\Gridmet\tmax_gridmet\tmax_gridmet_tiffs_C',
                                                       dt_tuple=dt_tup, tmax=tmax)
             else:
-                gm_images, gm_dates = get_temps_by_dt(root=r'Z:\Data\Temperature\USA\Gridmet\tmax_gridmet\tmin_gridmet_tiffs_C',
+                gm_images, gm_dates = get_temps_by_dt(root=r'Z:\Data\Temperature\USA\Gridmet\tmin_gridmet\tmin_gridmet_tiffs_C',
                                                       dt_tuple=dt_tup, tmax=tmax)
             drought_interval_arr = np.array([np.nan])
 
@@ -395,8 +395,12 @@ for study_year in study_years:
                 if np.sum(check_arr) != 0:
 
                     # output gm arr
+                    if tmax:
+                        fmatstr = 'tmax_{}{:03d}.tif'
+                    else:
+                        fmatstr = 'tmin_{}{:03d}.tif'
                     with rasterio.open(os.path.join(processed_out,
-                                                    'temp_{}{:03d}.tif'.format(gm_date.year, gm_date.timetuple().tm_yday)),
+                                                    fmatstr.format(gm_date.year, gm_date.timetuple().tm_yday)),
                                        'w', **d1_meta) as wfile:
                         wfile.write_band(1, gm_arr)
                 else:

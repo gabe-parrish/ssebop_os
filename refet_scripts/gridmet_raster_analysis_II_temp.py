@@ -198,7 +198,7 @@ def get_std_transform(shapefile, sample_raster):
     return meta
 
 
-def get_gridmets_by_dt(root, dt_tuple, format=None):
+def get_temps_by_dt(root, dt_tuple, tmax=True):
     """
     Return a list of gridmet images comprising of a datetime interval.
     :param root:
@@ -218,7 +218,11 @@ def get_gridmets_by_dt(root, dt_tuple, format=None):
         today = sdate + relativedelta.relativedelta(days=i)
 
         # construct a path to gridmet file based on the interval
-        gmpath = os.path.join(root, f'{today.year}', 'eto{}{:03d}.tif'.format(today.year, today.timetuple().tm_yday))
+        if tmax:
+            gmpath = os.path.join(root, f'{today.year}', 'tmax_{}{:03d}.tif'.format(today.year, today.timetuple().tm_yday))
+        else:
+            gmpath = os.path.join(root, f'{today.year}', 'tmin_{}{:03d}.tif'.format(today.year, today.timetuple().tm_yday))
+
         gmpaths.append(gmpath)
         dates.append(today)
     return gmpaths, dates
@@ -309,10 +313,10 @@ outroot = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_drou
 # end_year = 2012
 
 #=======================================================================
-
 # todo fill out
-shape = os.path.join(shproot, 'IL_aoi.shp')
-processed_out = os.path.join(outroot, 'IL_nondrought_rasters')
+tmax=False
+shape = os.path.join(shproot, 'OK_east.shp')
+processed_out = os.path.join(outroot, 'OKeast_nondrought_rasters_tmin')
 # for all sites 2001-2017 inclusive - overlap of GRIDMET (1980-2017), NDVI (2001-2018), and Drought Monitor(2000-2020) Shapefiles
 processing_years = [f'{i}' for i in range(2001, 2018)]
 print('processing years!, ', processing_years)
@@ -321,6 +325,7 @@ ndvi_thresh = 0.7
 thresh_high = True
 # if True, NDVI will be ignored
 ignore_ndvi = True
+
 #=======================================================================
 if not os.path.exists(processed_out):
     os.mkdir(processed_out)
@@ -414,9 +419,16 @@ for processing_year in processing_years:
                            'w', **d1_meta) as src:
             src.write_band(1, constantarr_bool.astype(int))
 
-        # get the gridmet image paths for NON Drought interval, put em together in a list
-        gm_images, gm_dates = get_gridmets_by_dt(root=r'Z:\Data\ReferenceET\USA\Gridmet\Daily\ETo',
-                                                 dt_tuple=dt_tup, format=None)
+
+        # get the gridmet image paths for the drought interval, put em together in a list
+        if tmax:
+            gm_images, gm_dates = get_temps_by_dt(root=r'Z:\Data\Temperature\USA\Gridmet\tmax_gridmet\tmax_gridmet_tiffs_C',
+                                                  dt_tuple=dt_tup, tmax=tmax)
+        else:
+            gm_images, gm_dates = get_temps_by_dt(root=r'Z:\Data\Temperature\USA\Gridmet\tmin_gridmet\tmin_gridmet_tiffs_C',
+                                                  dt_tuple=dt_tup, tmax=tmax)
+
+
         print('gm_images in between \n', [i.timetuple().tm_yday for i in gm_dates])
 
         # for each gridmet image:
@@ -465,8 +477,12 @@ for processing_year in processing_years:
 
             if np.sum(check_arr) != 0:
 
+                if tmax:
+                    fmatstr = 'tmax_{}{:03d}.tif'
+                else:
+                    fmatstr = 'tmin_{}{:03d}.tif'
                 # output gm arr
-                with rasterio.open(os.path.join(processed_out, 'eto_{}{:03d}.tif'.format(gm_date.year, gm_date.timetuple().tm_yday)),
+                with rasterio.open(os.path.join(processed_out, fmatstr.format(gm_date.year, gm_date.timetuple().tm_yday)),
                                    'w', **d1_meta) as wfile:  # **stack_meta -> **d1_meta
                     wfile.write_band(1, gm_arr)
             else:
