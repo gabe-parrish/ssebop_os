@@ -9,10 +9,11 @@ import numpy as np
 from dateutil import relativedelta
 from rasterio.enums import Resampling
 import matplotlib.pyplot as plt
-import geopandas as gpd
+# import geopandas as gpd
 from datetime import datetime as dt
 from glob import glob
 import sys
+
 
 """The same as gridmet_raster_analysis.py but clips to non-drought regions for comparisons with
  the drought gridmet periods..."""
