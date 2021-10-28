@@ -257,8 +257,8 @@ outroot = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_drou
 # =========================================================================================
 # # todo - FILL out
 # for the study area:
-shape = os.path.join(shppath, 'OK_west.shp')
-processed_out = os.path.join(outroot, 'OKwest_LVL1_ndvi55_rasters')
+shape = os.path.join(shppath, 'AZ_aoi.shp')
+processed_out = os.path.join(outroot, 'AZ_LVL1_ndvi55_rasters_new')
 if not os.path.exists(processed_out):
     os.mkdir(processed_out)
 drought_lvl = 1

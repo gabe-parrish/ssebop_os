@@ -115,6 +115,7 @@ def rasterize_gdf(gdf, temp_location, meta_obj, category='DM', fill_vall=None, w
         else:
             print('fill valll issss not valid')
             sys.exit()
+        burned_img = burned_img.astype('float32')
         wfile.write_band(1, burned_img)
 
     # windowed reading to get only valid pixels
@@ -311,16 +312,16 @@ outroot = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_drou
 #=======================================================================
 
 # todo fill out
-shape = os.path.join(shproot, 'IL_aoi.shp')
-processed_out = os.path.join(outroot, 'IL_nondrought_rasters')
+shape = os.path.join(shproot, 'AZ_aoi.shp')
+processed_out = os.path.join(outroot, 'AZ_nondrought_ndvi55_rasters')
 # for all sites 2001-2017 inclusive - overlap of GRIDMET (1980-2017), NDVI (2001-2018), and Drought Monitor(2000-2020) Shapefiles
 processing_years = [f'{i}' for i in range(2001, 2018)]
 print('processing years!, ', processing_years)
-ndvi_thresh = 0.7
+ndvi_thresh = 0.55
 # set to True if you want the ndvi higher than the threshold
 thresh_high = True
 # if True, NDVI will be ignored
-ignore_ndvi = True
+ignore_ndvi = False
 #=======================================================================
 if not os.path.exists(processed_out):
     os.mkdir(processed_out)

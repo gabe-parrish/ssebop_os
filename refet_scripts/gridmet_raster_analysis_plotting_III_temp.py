@@ -8,7 +8,7 @@ import rasterio
 import math
 # from dateutil import relativedelta
 from glob import glob
-from progressbar import progressbar
+# from progressbar import progressbar
 
 
 def get_tif_arr(tiff_path):
@@ -39,7 +39,7 @@ def accumulate_arrays(p_list):
 
 def average_arrays(p_list):
     mean_vals = []
-    for i, p in progressbar(enumerate(p_list)):
+    for i, p in enumerate(p_list):
         zeroth_arr = get_tif_arr(p)
         orig_arr = zeroth_arr[~np.isnan(zeroth_arr)]
         try:
@@ -272,9 +272,9 @@ start_year = 2001
 end_year = 2017
 
 
-drought_root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing_III\OKeast_LVL1_rasters_tmin' # _high_NDVI
-non_drought_root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing_III\OKeast_nondrought_rasters_tmin' # _high_NDVI
-study_area = 'OKeast'
+drought_root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing_III\AZ_LVL1_ndvi55_rasters_tmin' # _high_NDVI
+non_drought_root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing_III\AZ_nondrought_ndvi55_rasters_tmin' # _high_NDVI
+study_area = 'AZ'
 drought_lvl = '1'
 parameter = 'tmin'
 # ndvi_filter_str = 'high_ndvi_filter'
@@ -335,17 +335,26 @@ ax3 = plt.subplot(2, 1, 1)
 ax3.hist(drought_study_values,
          bins=50, alpha=0.5,
          color='blue', label=f"Drought GRIDMET ETo")
+if parameter == 'tmax':
+    ax3.set_xlim([10, 60])
+elif parameter == 'tmin':
+    ax3.set_xlim([0, 50])
+    # ax3.set_xbound(0, 45)
 
-ax3.set_xlim([10, 60])
+
 ax3.axvline(gm_drought_mean, color='red', label='Gridmet Drought Mean', lw=3)
 ax3.axvline(gm_drought_median, color='yellow', label='Gridmet Drought Median', lw=3)
 ax3.tick_params(axis='x', labelsize=22)
 ax3.tick_params(axis='y', labelsize=22)
 ax3.legend(loc='upper right', prop={'size': 22})
+
+
 # ax3.title.set_text(f'GRIDMET Drought Level {drought_lvl}+ Growing Season ({start_year}-{end_year}), NDVI > 0.7', fontsize=20)
 if ndvi_filter_str == 'high_ndvi_filter':
     ax3.set_title(f'GRIDMET {parameter} Drought Level {drought_lvl}+ Growing Season ({start_year}-{end_year}), NDVI > 0.55',
                   fontdict={'fontsize': 30, 'fontweight': 'medium'})
+
+
 else:
     ax3.set_title(f'GRIDMET Drought Level {drought_lvl}+ Growing Season ({start_year}-{end_year})',
                   fontdict={'fontsize': 30, 'fontweight': 'medium'})
@@ -356,21 +365,33 @@ ax4.hist(non_drought_study_values,
          bins=50, alpha=0.5, color='green',
          label=f"Non Drought GRIDMET ETo")
 
-ax4.set_xlim([10, 60])
+
+if parameter == 'tmax':
+    ax4.set_xlim([10, 60])
+elif parameter == 'tmin':
+    ax4.set_xlim([0, 50])
+    # ax3.set_xbound(0, 45)
+
+
 ax4.axvline(gm_nondrought_mean, color='red', label='Gridmet Non Drought Mean', lw=3)
 ax4.axvline(gm_nondrought_median, color='yellow', label='Gridmet Non Drought Median', lw=3)
 ax4.tick_params(axis='x', labelsize=22)
 ax4.tick_params(axis='y', labelsize=22)
 ax4.legend(loc='upper right', prop={'size': 22})  # fontsize=18
+
 # ax4.title.set_text(f'GRIDMET Non Drought Growing Season ({start_year}-{end_year}), NDVI > 0.7', fontsize=20)
 if ndvi_filter_str == 'high_ndvi_filter':
     ax4.set_title(f'GRIDMET Non Drought Growing Season ({start_year}-{end_year}), NDVI > 0.55',
                   fontdict={'fontsize': 30, 'fontweight': 'medium'})
+
 else:
     ax4.set_title(f'GRIDMET Non Drought Growing Season ({start_year}-{end_year})',
                   fontdict={'fontsize': 30, 'fontweight': 'medium'})
+
+
 ax4.set_xlabel(f'{parameter} (Degrees C)', fontsize=26)
 plt.tight_layout()
 plt.savefig(os.path.join(plot_output,
-                         f'GM_histo_{study_area}_USDMlvl{drought_lvl}_{parameter}_matching_days_{start_year}_{end_year}.png'))
+                         f'GM_histo_{study_area}_USDMlvl{drought_lvl}_{parameter}_matching_days_{start_year}_{end_year}_ndvi55.png'))
+
 plt.close()

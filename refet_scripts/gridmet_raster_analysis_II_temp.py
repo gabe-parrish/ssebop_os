@@ -9,7 +9,7 @@ import numpy as np
 from dateutil import relativedelta
 from rasterio.enums import Resampling
 import matplotlib.pyplot as plt
-# import geopandas as gpd
+import geopandas as gpd
 from datetime import datetime as dt
 from glob import glob
 import sys
@@ -116,6 +116,8 @@ def rasterize_gdf(gdf, temp_location, meta_obj, category='DM', fill_vall=None, w
         else:
             print('fill valll issss not valid')
             sys.exit()
+
+        burned_img = burned_img.astype('float32')
         wfile.write_band(1, burned_img)
 
     # windowed reading to get only valid pixels
@@ -315,17 +317,17 @@ outroot = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_drou
 
 #=======================================================================
 # todo fill out
-tmax=False
-shape = os.path.join(shproot, 'OK_east.shp')
-processed_out = os.path.join(outroot, 'OKeast_nondrought_rasters_tmin')
+tmax=True
+shape = os.path.join(shproot, 'AZ_aoi.shp')
+processed_out = os.path.join(outroot, 'AZ_nondrought_ndvi55_rasters_tmax')
 # for all sites 2001-2017 inclusive - overlap of GRIDMET (1980-2017), NDVI (2001-2018), and Drought Monitor(2000-2020) Shapefiles
 processing_years = [f'{i}' for i in range(2001, 2018)]
 print('processing years!, ', processing_years)
-ndvi_thresh = 0.7
+ndvi_thresh = 0.55
 # set to True if you want the ndvi higher than the threshold
 thresh_high = True
 # if True, NDVI will be ignored
-ignore_ndvi = True
+ignore_ndvi = False
 
 #=======================================================================
 if not os.path.exists(processed_out):
@@ -414,10 +416,12 @@ for processing_year in processing_years:
                         r'ensitivity\preprocessing_III\carr_bool_test'
         if not os.path.exists(test_location):
             os.mkdir(test_location)
+        bool_meta = d1_meta.copy()
+        bool_meta['dtype'] = 'int32'
         with rasterio.open(os.path.join(test_location, f'constant_var_{dt_tup[0].year}'
                                                        f'{dt_tup[0].timetuple().tm_yday}_{dt_tup[1].year}'
                                                        f'{dt_tup[1].timetuple().tm_yday}.tif'),
-                           'w', **d1_meta) as src:
+                           'w', **bool_meta) as src:
             src.write_band(1, constantarr_bool.astype(int))
 
 
@@ -483,6 +487,7 @@ for processing_year in processing_years:
                 else:
                     fmatstr = 'tmin_{}{:03d}.tif'
                 # output gm arr
+                gm_arr = gm_arr.astype('float32')
                 with rasterio.open(os.path.join(processed_out, fmatstr.format(gm_date.year, gm_date.timetuple().tm_yday)),
                                    'w', **d1_meta) as wfile:  # **stack_meta -> **d1_meta
                     wfile.write_band(1, gm_arr)

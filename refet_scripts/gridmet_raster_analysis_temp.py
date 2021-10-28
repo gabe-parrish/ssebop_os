@@ -95,6 +95,7 @@ def rasterize_gdf(gdf, temp_location, meta_obj, category='DM', windowsize=3):
     with rasterio.open(temp_location) as rfile:
 
         new_meta = rfile.meta.copy()
+        print('new metadata \n', new_meta)
         new_transform = rfile.window_transform(slicewindow)
         print('new transform ', new_transform)
         print('old transform', rfile.transform)
@@ -262,11 +263,11 @@ outroot = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_drou
 # # todo - FILL out
 # for the study area:
 tmax = False
-shape = os.path.join(shppath, 'OK_east.shp')
-processed_out = os.path.join(outroot, 'OKeast_LVL3_rasters_tmin')
+shape = os.path.join(shppath, 'AZ_aoi.shp')
+processed_out = os.path.join(outroot, 'AZ_LVL1_ndvi55_rasters_tmin')
 if not os.path.exists(processed_out):
     os.mkdir(processed_out)
-drought_lvl = 3
+drought_lvl = 1
 # for all sites 2001-2017 inclusive - overlap of GRIDMET (1980-2017), NDVI (2001-2018),
 # and Drought Monitor(2000-2020) Shapefiles
 study_years = [f'{i}' for i in range(2001, 2018)]
@@ -274,7 +275,7 @@ ndvi_thresh = 0.55
 # set to True if you want the ndvi higher than the threshold
 thresh_high = True
 # if True, NDVI will be ignored
-ignore_ndvi = True
+ignore_ndvi = False
 # =========================================================================================
 
 for study_year in study_years:
@@ -341,7 +342,7 @@ for study_year in study_years:
                 gm_arr = generate_standard_vrt(rasterpath=gm_img, meta=d1_meta)
                 print('gridmet dtype')
                 print(gm_arr.dtype)
-                gm_arr = gm_arr
+                gm_arr = gm_arr.astype('float32')
                 # For each gridmet image, search for the matching NDVI image, or the two nearest ndvi images.
                 print(f'GM date: {gm_date.year}-{gm_date.timetuple().tm_yday}')
 

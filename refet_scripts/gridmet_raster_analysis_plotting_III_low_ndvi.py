@@ -8,7 +8,7 @@ import rasterio
 import math
 from dateutil import relativedelta
 from glob import glob
-from progressbar import progressbar
+# from progressbar import progressbar
 import pandas as pd
 
 def get_tif_arr(tiff_path):
@@ -20,7 +20,7 @@ def get_tif_arr(tiff_path):
 
 def accumulate_arrays(p_list):
     """"""
-    for i, p in progressbar(enumerate(p_list)):
+    for i, p in enumerate(p_list):
         if i == 0:
             print('zeroth path: ', p)
             zeroth_arr = get_tif_arr(p)
@@ -39,7 +39,7 @@ def accumulate_arrays(p_list):
 
 def average_arrays(p_list):
     mean_vals = []
-    for i, p in progressbar(enumerate(p_list)):
+    for i, p in enumerate(p_list):
         zeroth_arr = get_tif_arr(p)
         orig_arr = zeroth_arr[~np.isnan(zeroth_arr)]
         try:

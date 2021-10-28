@@ -8,7 +8,7 @@ import rasterio
 import math
 from dateutil import relativedelta
 from glob import glob
-from progressbar import progressbar
+# from progressbar import progressbar
 import pandas as pd
 
 def get_tif_arr(tiff_path):
@@ -20,7 +20,7 @@ def get_tif_arr(tiff_path):
 
 def accumulate_arrays(p_list):
     """"""
-    for i, p in progressbar(enumerate(p_list)):
+    for i, p in enumerate(p_list):
         if i == 0:
             print('zeroth path: ', p)
             zeroth_arr = get_tif_arr(p)
@@ -39,7 +39,7 @@ def accumulate_arrays(p_list):
 
 def average_arrays(p_list):
     mean_vals = []
-    for i, p in progressbar(enumerate(p_list)):
+    for i, p in enumerate(p_list):
         zeroth_arr = get_tif_arr(p)
         orig_arr = zeroth_arr[~np.isnan(zeroth_arr)]
         try:
@@ -272,11 +272,11 @@ end_year = 2017
 
 
 drought_root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing_III\AZ_LVL1_ndvi55_rasters' # _high_NDVI
-non_drought_root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing_III\AZ_nondrought_rasters' # _high_NDVI
+non_drought_root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\preprocessing_III\AZ_high_NDVI_nondrought_rasters' # _high_NDVI
 study_area = 'AZ'
 drought_lvl = '1'
-# ndvi_filter_str = 'high_ndvi_filter'
-ndvi_filter_str = 'no_ndvi_filter'
+ndvi_filter_str = 'high_ndvi_filter'
+# ndvi_filter_str = 'no_ndvi_filter'
 plot_output = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\histograms_III'
 intervals = make_intervals(season_start=(gs_startmonth, gs_endmonth), season_end=(gs_endmonth, gs_endday),
                            startyear=start_year, endyear=end_year)
