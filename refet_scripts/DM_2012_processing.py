@@ -8,7 +8,9 @@ from matplotlib import pyplot as plt
 
 #
 root = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\2012figs\2012_drought_shapes'
-
+outroot = r'Z:\Users\Gabe\refET\DroughtPaper\paper_analysis\regionalGRIDMET_droughtSensitivity\2012figs\2012MonthlyMaps'
+if not os.path.exists(outroot):
+    os.mkdir(outroot)
 # todo - create monthly drought 1+ shapefiles
 monthlies = {}
 monthlist = []
@@ -36,7 +38,7 @@ for k, v in monthlies.items():
         gdf = gpd.read_file(fpath)
         # print('===DM===')
         # print(gdf['DM'])
-        drought_gdf = gdf[gdf.DM > 0]
+        drought_gdf = gdf[gdf.DM >= 3]
         # print(drought_gdf)
         # print('drought dm')
         # print(drought_gdf.DM)
@@ -64,6 +66,7 @@ for k, v in monthlies.items():
     plt.show()
 
     # todo - ouput this shit!
+    monthly_drought_bounds.to_file(os.path.join(outroot, f'drought_2012_{k}_gte3.shp'))
 
 
 #  hold for later
@@ -95,4 +98,3 @@ for k, v in monthlies.items():
 #         drought_boundary.plot(color='red')
 #         plt.title(f'{file}')
 #         plt.show()
-#
